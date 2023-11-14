@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Noob</title>
+    <style>
+        .toggle-replies-button {
+    display: inline-block;
+    background-color: #000; /* Green button color */
+    color: #00FF00; /* Black text */
+    padding: 5px 10px; /* Adjust padding as needed */
+    margin-right: 5px; /* Adjust margin as needed */
+    text-decoration: none;
+    border:none;
+}
+        body {
+            background-color: #000;
+            color: #00FF00;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            color: #00FF00;
+        }
+
+        p {
+            color: #00FF00;
+        }
+
+        a {
+            color: #00FF00;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Statistics</h1>
+    <p>Total Posts: {{ total_posts }}</p>
+    <p>Total Replies: {{ total_replies }}</p>
+    <p>Average Replies per Post: {{ average_replies_per_post }}</p>
+    <p>Average Post Age: {{ average_post_age }} seconds</p>
+<img type="image/png" src="{{ url_for('static', filename='enlarged_message_board_image.png') }}" alt="Enlarged Message Board Image" width="800" height="800">
+
+
+<div>
+    <a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
+    <a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
+    <a class="toggle-replies-button" href="{{ url_for('home')}}"> I </a>
+</div>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
+    <title>Noob</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00FF00; /* Green text */
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        a {
+            color: #00FF00; /* Green link color */
+            text-decoration: none;
+        }
+        h1, h2 {
+            color: #00FF00; /* Green header text color */
+        }
+
+        .post-container, .message {
+            border: 1px solid #00FF00; /* Green border */
+            padding: 10px;
+            margin: 10px;
+            background-color: #000; /* Dark background */
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+
+        .replies {
+            margin-left: 40px;
+        }
+        /* Hover effect for the buttons */
+.toggle-replies-button:hover {
+    text-decoration: underline;
+}
+
+        .toggle-replies-button {
+    display: inline-block;
+    background-color: #000; /* Green button color */
+    color: #00FF00; /* Black text */
+    padding: 5px 10px; /* Adjust padding as needed */
+    margin-right: 5px; /* Adjust margin as needed */
+    text-decoration: none;
+    border:none;
+}
+
+        .timestamp {
+            color: #00FF00; /* Green timestamp color */
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="post-container">
+        <p><strong>#{{ post.post_number }} | {{ post.timestamp }}</strong></p>
+        <p>{{ post.message }}</p>
+    </div>
+
+    <ul>
+        {% for reply in post.replies %}
+            <li class="message">
+                <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }}</strong></p>
+                <p>{{ reply.message }}</p>
+                {% if reply.replies %}
+                    <div class="replies" style="margin-left: 40px;">
+                        {% for sub_reply in reply.replies %}
+                            <div class="message" style="margin-left: 80px;">
+                                <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }}</strong></p>
+                                <p>{{ sub_reply.message }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+<a class="toggle-replies-button" href="{{ url_for('home')}}"> I </a>
+    <a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
+<a class="toggle-replies-button" href="{{ url_for('statistics')}}"> % </a>
+</body>
+</html>

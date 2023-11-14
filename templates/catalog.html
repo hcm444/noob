@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
+    <title>Noob</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00FF00; /* Green text */
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .toggle-replies-button:hover {
+            text-decoration: underline;
+        }
+
+        .toggle-replies-button {
+            display: inline-block;
+            background-color: #000; /* Green button color */
+            color: #00FF00; /* Black text */
+            padding: 5px 10px; /* Adjust padding as needed */
+            margin-right: 5px; /* Adjust margin as needed */
+            text-decoration: none;
+            border: none;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            display: grid;
+            grid-template-columns: repeat(8, 1fr); /* Adjust the number of columns as needed */
+            grid-auto-rows: 1fr; /* Make the rows equally sized */
+        }
+
+        li {
+            border: 1px solid #00FF00; /* Green border */
+            padding: 10px;
+            margin: 10px;
+            background-color: #000; /* Dark background */
+        }
+
+        a {
+            color: #00FF00; /* Green link color */
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        .teaser {
+            display: -webkit-box;
+            -webkit-line-clamp: 5; /* Adjust the number of lines to show */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <ul>
+        {% for post in catalog_data %}
+            <li>
+                <a href="/thread/{{ post.post_number }}">
+                    #{{ post.post_number }} | {{ post.total_replies }} | {{ post.timestamp }} |
+                    <span class="teaser">{{ post.message }}</span>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+
+    <a class="toggle-replies-button" href="{{ url_for('home')}}"> I </a>
+    <a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
+<a class="toggle-replies-button" href="{{ url_for('statistics')}}"> % </a>
+</body>
+</html>

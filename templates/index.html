@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
+    <title>Noob</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00FF00; /* Green text */
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .message {
+            border: 1px solid #00FF00; /* Green border */
+            padding: 10px;
+            margin: 10px;
+            background-color: #000; /* Dark background */
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+
+        .replies {
+            margin-left: 40px;
+        }
+
+        .new-post {
+            border: 1px solid #00FF00;
+            padding: 10px;
+            margin: 10px;
+            background-color: #000;
+            word-wrap: break-word;
+            overflow: hidden;
+        }
+        /* Hover effect for the buttons */
+.toggle-replies-button:hover {
+    text-decoration: underline;
+}
+
+        .toggle-replies-button {
+    display: inline-block;
+    background-color: #000; /* Green button color */
+    color: #00FF00; /* Black text */
+    padding: 5px 10px; /* Adjust padding as needed */
+    margin-right: 5px; /* Adjust margin as needed */
+    text-decoration: none;
+    border:none;
+}
+
+        .high-score {
+            margin-top: 20px;
+        }
+
+        .pagination {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .page-link {
+            display: inline-block;
+            margin: 0 5px;
+        }
+
+        a {
+            color: #00FF00; /* Green link color */
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Change button colors */
+        .button.is-primary {
+            background-color: #00FF00; /* Green button color */
+            color: #000; /* Black text */
+        }
+    </style>
+</head>
+<body>
+
+<div class="new-post">
+    <form action="/post" method="post">
+        <input type="hidden" name="parent_post" value="{{ parent_post_number }}">
+        <div class="field">
+            <div class="control">
+                <textarea class="textarea textarea-wrap" name="message" rows="4" cols="50" required></textarea>
+            </div>
+        </div>
+        <div class="field is-grouped">
+    <div class="control">
+        <button class="toggle-replies-button" type="submit"> > </button>
+    </div>
+</div>
+    </form>
+</div>
+
+{% for message in messages %}
+    <div class="message" id="post{{ message.post_number }}" >
+
+        <p><strong>#{{ message.post_number }} | {{ message.timestamp }}</strong></p>
+        <p>{{ message.message }}</p>
+        <a class="toggle-replies-button" href="{{ url_for('thread', post_number=message.post_number) }}"> = </a>
+        <a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
+
+        {% if message.replies %}
+            <a class="toggle-replies-button" data-toggle="replies{{ message.post_number }}"> + </a>
+            <div class="replies" id="replies{{ message.post_number }}">
+                {% for reply in message.replies %}
+                    <div class="message" style="margin-left: 40px;">
+                        <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }}</strong></p>
+                        <p>{{ reply.message }}</p>
+                        {% if reply.replies %}
+                            <div class="replies" id="replies{{ reply.post_number }}">
+                                {% for sub_reply in reply.replies %}
+                                    <div class="message" style="margin-left: 80px;">
+                                        <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }}</strong></p>
+                                        <p>{{ sub_reply.message }}</p>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}
+
+<div class="pagination">
+    <span>{{ current_page }} | {{ total_pages }}</span>
+
+    {% for page_num in range(1, total_pages + 1) %}
+        {% if page_num == current_page %}
+            <span class="page-link current-page">{{ [page_num] }}</span>
+        {% else %}
+            <a class="page-link" href="?page={{ page_num }}">{{ [page_num] }}</a>
+        {% endif %}
+    {% endfor %}
+</div>
+
+<a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
+<a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
+<a class="toggle-replies-button" href="{{ url_for('statistics')}}"> % </a>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    var toggleButtons = document.getElementsByClassName("toggle-replies-button");
+
+    Array.from(toggleButtons).forEach(function(button) {
+        button.addEventListener("click", function() {
+            var replyList = document.getElementById(this.getAttribute("data-toggle"));
+            if (replyList) {
+                if (replyList.style.display === "none" || replyList.style.display === "") {
+                    replyList.style.display = "block";
+                } else {
+                    replyList.style.display = "none";
+                }
+            }
+        });
+    });
+});
+
+</script>
+</body>
+</html>
