@@ -27,10 +27,38 @@ MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 message_board = []
 post_counts = {}
+fingerprint_post_counts = {}
 post_counter = 1
 MAX_REPEATING_CHARACTERS = 20
+MAX_POSTS_PER_FINGERPRINT = 3
+
 
 logging.basicConfig(level=logging.DEBUG)
+def generate_device_fingerprint():
+    user_agent = request.headers.get('User-Agent', '')
+    ip_address = request.remote_addr
+
+    # Combine relevant information to create a fingerprint
+    fingerprint = f"{user_agent}_{ip_address}"
+
+    return fingerprint
+
+def check_fingerprint_rate_limit(fingerprint):
+    # Check if the fingerprint has exceeded the rate limit
+    if fingerprint in fingerprint_post_counts:
+        count, timestamp = fingerprint_post_counts[fingerprint]
+        time_diff = datetime.now() - timestamp
+
+        if time_diff > POST_LIMIT_DURATION:
+            fingerprint_post_counts[fingerprint] = (1, datetime.now())
+        elif count >= MAX_POSTS_PER_FINGERPRINT:
+            return False  # Rate limit exceeded
+        else:
+            fingerprint_post_counts[fingerprint] = (count + 1, datetime.now())
+    else:
+        fingerprint_post_counts[fingerprint] = (1, datetime.now())
+
+    return True  # Within rate limit
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
     return bool(repeating_pattern.search(message))
@@ -115,6 +143,14 @@ def post():
     message = request.form.get('message')
     ip_address = request.remote_addr
     # Check for similarity with all existing posts
+
+    device_fingerprint = generate_device_fingerprint()
+
+    # Check if the fingerprint has exceeded the rate limit
+    if not check_fingerprint_rate_limit(device_fingerprint):
+        return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute for this device.'})
+
+
     for existing_post in message_board:
         similarity = calculate_similarity_ratio(existing_post['message'], message)
 
