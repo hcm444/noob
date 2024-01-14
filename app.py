@@ -31,6 +31,7 @@ fingerprint_post_counts = {}
 post_counter = 1
 MAX_REPEATING_CHARACTERS = 20
 MAX_POSTS_PER_FINGERPRINT = 3
+MAX_POSTS_PER_DAY = 100
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -57,6 +58,10 @@ def check_fingerprint_rate_limit(fingerprint):
             fingerprint_post_counts[fingerprint] = (count + 1, datetime.now())
     else:
         fingerprint_post_counts[fingerprint] = (1, datetime.now())
+
+    # Check if the user has exceeded the daily post limit
+    if count + 1 > MAX_POSTS_PER_DAY:
+        return False  # Daily limit exceeded
 
     return True  # Within rate limit
 def has_too_many_repeating_characters(message):
@@ -169,6 +174,11 @@ def post():
 
     if message.strip() == '>>':
         return jsonify({'error': 'Error: Posting ">>" by itself is not allowed.'})
+
+    # Check if the fingerprint has exceeded the rate limit
+    if not check_fingerprint_rate_limit(device_fingerprint):
+        return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute or per day for this device.'})
+
 
     if ip_address in post_counts:
         count, timestamp = post_counts[ip_address]
