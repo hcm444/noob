@@ -8,12 +8,11 @@ import colorsys
 import time
 import csv
 import logging
-from Levenshtein import distance
+
 from difflib import SequenceMatcher
 
 
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+
 app = Flask(__name__, static_url_path='/static')
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
