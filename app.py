@@ -8,7 +8,12 @@ import colorsys
 import time
 import csv
 import logging
+from Levenshtein import distance
+from difflib import SequenceMatcher
 
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 app = Flask(__name__, static_url_path='/static')
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
@@ -18,15 +23,21 @@ IMAGE_GEN_TIME = 60
 POSTS_PER_PAGE = 20 #20
 MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 2 #2 or 3
+USER_POSTS_PER_MIN = 3 #2 or 3
 MAX_REPLIES = 100
-
+YOUR_THRESHOLD = 0.5
 message_board = []
 post_counts = {}
 post_counter = 1
+MAX_REPEATING_CHARACTERS = 20
 
 logging.basicConfig(level=logging.DEBUG)
+def has_too_many_repeating_characters(message):
+    repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
+    return bool(repeating_pattern.search(message))
 
+def calculate_similarity_ratio(post1, post2):
+    return SequenceMatcher(None, post1, post2).ratio()
 
 def delete_oldest_parent_post():
     while len(message_board) > MAX_PARENT_POSTS:
@@ -104,6 +115,16 @@ def post():
     global post_counts, post_counter
     message = request.form.get('message')
     ip_address = request.remote_addr
+    # Check for similarity with all existing posts
+    for existing_post in message_board:
+        similarity = calculate_similarity_ratio(existing_post['message'], message)
+
+        if similarity > YOUR_THRESHOLD:
+            return jsonify({'error': 'Error: This message is too similar to an existing post.'})
+
+    # Check for too many repeating characters
+    if has_too_many_repeating_characters(message):
+        return jsonify({'error': f'Error: Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'})
 
     if not message or message.isspace():
         return jsonify({'error': 'Error: Message should not be empty or contain only whitespace.'})
@@ -317,4 +338,4 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
