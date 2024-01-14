@@ -170,7 +170,7 @@ def snake():
     return render_template('snake.html')
 
 
-# In the home route
+# Existing code...
 @app.route('/')
 def home():
     captcha_code, captcha_image = generate_captcha_image()
@@ -185,7 +185,7 @@ def home():
 
     messages_to_display = reversed_message_board[start_index:end_index]
 
-    # Pass both messages and captcha information to the template
+    # Pass only the captcha image to the template
     return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page, captcha_image=captcha_image)
 
 
