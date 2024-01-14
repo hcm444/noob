@@ -119,7 +119,7 @@ def post():
         similarity = calculate_similarity_ratio(existing_post['message'], message)
 
         if similarity > YOUR_THRESHOLD:
-            return jsonify({'error': 'Error: This message is too similar to an existing post.'})
+            return jsonify({'error': f'Error: This message is {similarity}% similar to an existing post.'})
 
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
@@ -143,7 +143,7 @@ def post():
         elif count >= USER_POSTS_PER_MIN:
             remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
             return jsonify({
-                               'error': f'Error: You can only post five times per minute. Please wait {remaining_time} seconds before posting again.'})
+                               'error': f'Error: You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'})
         else:
             post_counts[ip_address] = (count + 1, datetime.now())
     else:
