@@ -11,30 +11,28 @@ import logging
 
 from difflib import SequenceMatcher
 
-
-
 app = Flask(__name__, static_url_path='/static')
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
-POSTS_PER_PAGE = 20 #20
+POSTS_PER_PAGE = 20  # 20
 MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 3 #2 or 3
+USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
-message_board = []
-post_counts = {}
-fingerprint_post_counts = {}
 post_counter = 1
 MAX_REPEATING_CHARACTERS = 20
 MAX_POSTS_PER_FINGERPRINT = 3
-MAX_POSTS_PER_DAY = 100
-
+message_board = []
+post_counts = {}
+fingerprint_post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
+
+
 def generate_device_fingerprint():
     user_agent = request.headers.get('User-Agent', '')
     ip_address = request.remote_addr
@@ -43,6 +41,7 @@ def generate_device_fingerprint():
     fingerprint = f"{user_agent}_{ip_address}"
 
     return fingerprint
+
 
 def check_fingerprint_rate_limit(fingerprint):
     # Check if the fingerprint has exceeded the rate limit
@@ -59,17 +58,17 @@ def check_fingerprint_rate_limit(fingerprint):
     else:
         fingerprint_post_counts[fingerprint] = (1, datetime.now())
 
-    # Check if the user has exceeded the daily post limit
-    if count + 1 > MAX_POSTS_PER_DAY:
-        return False  # Daily limit exceeded
-
     return True  # Within rate limit
+
+
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
     return bool(repeating_pattern.search(message))
 
+
 def calculate_similarity_ratio(post1, post2):
     return SequenceMatcher(None, post1, post2).ratio()
+
 
 def delete_oldest_parent_post():
     while len(message_board) > MAX_PARENT_POSTS:
@@ -127,7 +126,6 @@ def snake():
 
 
 @app.route('/')
-
 def home():
     page = int(request.args.get('page', 1))
     messages_per_page = POSTS_PER_PAGE
@@ -155,16 +153,16 @@ def post():
     if not check_fingerprint_rate_limit(device_fingerprint):
         return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute for this device.'})
 
-
     for existing_post in message_board:
         similarity = calculate_similarity_ratio(existing_post['message'], message)
 
         if similarity > YOUR_THRESHOLD:
-            return jsonify({'error': f'Error: This message is {100*similarity}% similar to an existing post.'})
+            return jsonify({'error': f'Error: This message is {100 * similarity}% similar to an existing post.'})
 
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
-        return jsonify({'error': f'Error: Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'})
+        return jsonify({
+                           'error': f'Error: Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'})
 
     if not message or message.isspace():
         return jsonify({'error': 'Error: Message should not be empty or contain only whitespace.'})
@@ -175,11 +173,6 @@ def post():
     if message.strip() == '>>':
         return jsonify({'error': 'Error: Posting ">>" by itself is not allowed.'})
 
-    # Check if the fingerprint has exceeded the rate limit
-    if not check_fingerprint_rate_limit(device_fingerprint):
-        return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute or per day for this device.'})
-
-
     if ip_address in post_counts:
         count, timestamp = post_counts[ip_address]
         time_diff = datetime.now() - timestamp
@@ -189,7 +182,7 @@ def post():
         elif count >= USER_POSTS_PER_MIN:
             remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
             return jsonify({
-                               'error': f'Error: You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'})
+                'error': f'Error: You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'})
         else:
             post_counts[ip_address] = (count + 1, datetime.now())
     else:
