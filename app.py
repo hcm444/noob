@@ -39,8 +39,9 @@ fingerprint_post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 def generate_captcha_image():
-    captcha_length = 7
+    captcha_length = 6
     captcha_chars = string.ascii_uppercase + string.digits
     captcha_code = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
 
@@ -85,6 +86,7 @@ def generate_captcha_image():
     base64_image = base64.b64encode(image_io.getvalue()).decode('utf-8')
 
     return captcha_code, base64_image
+
 
 def generate_device_fingerprint():
     user_agent = request.headers.get('User-Agent', '')
