@@ -15,10 +15,10 @@ cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 ENLARGE_FACTOR = 40
 MAX_CHAR = 300
 IMAGE_GEN_TIME = 60
-POSTS_PER_PAGE = 20
+POSTS_PER_PAGE = 20 #20
 MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 2
+USER_POSTS_PER_MIN = 2 #2 or 3
 MAX_REPLIES = 100
 
 message_board = []
@@ -84,7 +84,7 @@ def snake():
 
 
 @app.route('/')
-@cache.cached(timeout=10)
+
 def home():
     page = int(request.args.get('page', 1))
     messages_per_page = POSTS_PER_PAGE
