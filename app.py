@@ -119,7 +119,7 @@ def post():
         similarity = calculate_similarity_ratio(existing_post['message'], message)
 
         if similarity > YOUR_THRESHOLD:
-            return jsonify({'error': f'Error: This message is {similarity}% similar to an existing post.'})
+            return jsonify({'error': f'Error: This message is {100*similarity}% similar to an existing post.'})
 
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
