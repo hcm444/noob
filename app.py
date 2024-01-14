@@ -17,7 +17,7 @@ app = Flask(__name__, static_url_path='/static')
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 ENLARGE_FACTOR = 40
-MAX_CHAR = 300
+MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
 POSTS_PER_PAGE = 20 #20
 MAX_PARENT_POSTS = 400
