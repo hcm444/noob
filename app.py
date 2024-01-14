@@ -39,9 +39,8 @@ fingerprint_post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
-
 def generate_captcha_image():
-    captcha_length = 6
+    captcha_length = 10
     captcha_chars = string.ascii_uppercase + string.digits
     captcha_code = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
 
@@ -62,7 +61,17 @@ def generate_captcha_image():
     # Center the text in the larger image
     text_position = ((zoomed_width - text_width) // 2, (zoomed_height - text_height) // 2)
 
+    # Draw the text on the image
     draw.text(text_position, captcha_code, font=font, fill=(0, 0, 0))
+
+    # Draw random multicolored lines on top of the text
+    num_lines = 5  # You can adjust the number of lines
+    for _ in range(num_lines):
+        line_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        line_width = random.randint(1, 1)
+        line_start = (random.randint(0, zoomed_width), random.randint(0, zoomed_height))
+        line_end = (random.randint(0, zoomed_width), random.randint(0, zoomed_height))
+        draw.line([line_start, line_end], fill=line_color, width=line_width)
 
     # Resize the image to the original dimensions
     image = image.resize((original_width, original_height), Image.ANTIALIAS)
@@ -76,7 +85,6 @@ def generate_captcha_image():
     base64_image = base64.b64encode(image_io.getvalue()).decode('utf-8')
 
     return captcha_code, base64_image
-
 
 def generate_device_fingerprint():
     user_agent = request.headers.get('User-Agent', '')
