@@ -13,12 +13,12 @@ app = Flask(__name__, static_url_path='/static')
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 ENLARGE_FACTOR = 40
-MAX_CHAR = 1000
+MAX_CHAR = 300
 IMAGE_GEN_TIME = 60
 POSTS_PER_PAGE = 20
 MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 500
+USER_POSTS_PER_MIN = 2
 MAX_REPLIES = 100
 
 message_board = []
