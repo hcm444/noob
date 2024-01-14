@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify
+
 from datetime import datetime, timedelta
 import re
 from flask_caching import Cache
@@ -8,10 +8,15 @@ import colorsys
 import time
 import csv
 import logging
-
+from flask import Flask, render_template, request, jsonify, session
+import random
+import string
 from difflib import SequenceMatcher
 
+
 app = Flask(__name__, static_url_path='/static')
+app.secret_key = 'your_secret_key'  # Replace with a secure secret key
+
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 ENLARGE_FACTOR = 40
@@ -32,7 +37,11 @@ fingerprint_post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
-
+def generate_captcha():
+    captcha_length = 6
+    captcha_chars = string.ascii_uppercase + string.digits
+    captcha = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
+    return captcha
 def generate_device_fingerprint():
     user_agent = request.headers.get('User-Agent', '')
     ip_address = request.remote_addr
@@ -127,6 +136,8 @@ def snake():
 
 @app.route('/')
 def home():
+    captcha = generate_captcha()
+    session['captcha'] = captcha
     page = int(request.args.get('page', 1))
     messages_per_page = POSTS_PER_PAGE
     total_pages = (len(message_board) + messages_per_page - 1) // messages_per_page
@@ -137,7 +148,7 @@ def home():
 
     messages_to_display = reversed_message_board[start_index:end_index]
 
-    return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page)
+    return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page,captcha=captcha)
 
 
 @app.route('/post', methods=['POST'])
@@ -146,6 +157,11 @@ def post():
     message = request.form.get('message')
     ip_address = request.remote_addr
     # Check for similarity with all existing posts
+    user_captcha = request.form.get('captcha', '')
+    stored_captcha = session.get('captcha', '')
+
+    if user_captcha.upper() != stored_captcha:
+        return jsonify({'error': 'Error: CAPTCHA verification failed.'})
 
     device_fingerprint = generate_device_fingerprint()
 
