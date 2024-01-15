@@ -80,10 +80,13 @@ def generate_captcha_image():
 
 def generate_device_fingerprint():
     user_agent = request.headers.get('User-Agent', '')
-    ip_address = request.remote_addr
+    full_ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
+
+    # Extract the relevant part of the IP address (e.g., first three octets)
+    ip_prefix = '.'.join(full_ip_address.split('.')[:3])
 
     # Combine relevant information to create a fingerprint
-    fingerprint = f"{user_agent}_{ip_address}"
+    fingerprint = f"{user_agent}_{ip_prefix}"
 
     return fingerprint
 
@@ -104,6 +107,7 @@ def check_fingerprint_rate_limit(fingerprint):
         fingerprint_post_counts[fingerprint] = (1, datetime.now())
 
     return True  # Within rate limit
+
 
 
 def has_too_many_repeating_characters(message):
