@@ -231,11 +231,42 @@ def post():
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
 
-
     print(f"IP Address of the user who posted: {ip_address}")
+
     # Check if the IP address is banned
     if ip_address in banned_ips:
         return jsonify({'error': 'Error: Your IP address is banned from posting.'})
+
+    # Check for similarity with all existing posts
+    user_captcha = request.form.get('captcha', '')
+    stored_captcha = session.get('captcha', '')
+
+    if user_captcha.upper() != stored_captcha:
+        return jsonify({'error': 'Error: CAPTCHA verification failed.'})
+
+    device_fingerprint = generate_device_fingerprint()
+
+    # Check if the fingerprint has exceeded the rate limit
+    if not check_fingerprint_rate_limit(device_fingerprint):
+        return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute for this device.'})
+
+    # Check if the user has posted before
+    if ip_address in post_counts:
+        count, timestamp = post_counts[ip_address]
+        time_diff = datetime.now() - timestamp
+
+        if time_diff > POST_LIMIT_DURATION:
+            post_counts[ip_address] = (1, datetime.now())
+        elif count >= USER_POSTS_PER_MIN:
+            remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
+            return jsonify({
+                'error': f'Error: You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'})
+        else:
+            post_counts[ip_address] = (count + 1, datetime.now())
+            print(f"User with IP {ip_address} has posted again.")
+    else:
+        post_counts[ip_address] = (1, datetime.now())
+        print(f"New user with IP {ip_address} has posted.")
 
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
