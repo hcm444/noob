@@ -14,13 +14,20 @@ from flask import Flask, render_template, request, jsonify, session, send_file
 import random
 import string
 from difflib import SequenceMatcher
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
 
 
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'your_secret_key'  # Replace with a secure secret key
 
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
-
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    storage_uri="memory://",  # You can use a more persistent storage backend in production
+)
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
@@ -226,6 +233,7 @@ def home():
 
 
 @app.route('/post', methods=['POST'])
+@limiter.limit("3 per minute")  # Adjust the limit as needed
 def post():
     global post_counts, post_counter
     message = request.form.get('message')
