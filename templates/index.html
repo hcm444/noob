@@ -105,8 +105,9 @@
 
 
 {% for message in messages %}
-    <div class="message" id="post{{ message.post_number }}">
-        <p><strong>#{{ message.post_number }} | {{ message.timestamp }} | IP: {{ message.ip_address }}</strong></p>
+    <div class="message" id="post{{ message.post_number }}" >
+
+        <p><strong>#{{ message.post_number }} | {{ message.timestamp }}</strong></p>
         <p>{{ message.message }}</p>
         <a class="toggle-replies-button" href="{{ url_for('thread', post_number=message.post_number) }}"> = </a>
         <a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
@@ -116,14 +117,13 @@
             <div class="replies" id="replies{{ message.post_number }}">
                 {% for reply in message.replies %}
                     <div class="message" style="margin-left: 40px;">
-                        <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }} | IP: {{ reply.ip_address }}</strong></p>
+                        <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }}</strong></p>
                         <p>{{ reply.message }}</p>
                         {% if reply.replies %}
-                            <a class="toggle-replies-button" data-toggle="replies{{ reply.post_number }}"> + </a>
                             <div class="replies" id="replies{{ reply.post_number }}">
                                 {% for sub_reply in reply.replies %}
                                     <div class="message" style="margin-left: 80px;">
-                                        <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }} | IP: {{ sub_reply.ip_address }}</strong></p>
+                                        <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }}</strong></p>
                                         <p>{{ sub_reply.message }}</p>
                                     </div>
                                 {% endfor %}
