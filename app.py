@@ -52,15 +52,18 @@ def ban_ip():
     if password != 'B0r3alB0r3al':
         return 'Invalid password. Access denied.'
 
-    # Check if the input is a single IP address or an IP range
-    try:
-        ip_network_object = ip_network(ip_to_ban, strict=False)
-    except ValueError:
-        return 'Invalid IP address or range format.'
+    # Check if the IP address is already banned
+    if ip_to_ban in banned_ips:
+        return f'IP address {ip_to_ban} is already banned.'
 
-    # Ban the IP address or range
-    banned_ip_ranges.add(ip_network_object)
-    return f'IP address or range {ip_to_ban} has been banned.'
+    # Check if the IP address is within the specified range to ban
+    if ip_to_ban.startswith("64.42.179.59"):
+        # Ban the IP address
+        banned_ips.add(ip_to_ban)
+        return f'IP address {ip_to_ban} has been banned.'
+    else:
+        return f'IP address {ip_to_ban} is not in the banned range.'
+
 def generate_captcha_image():
     captcha_length = 6
     captcha_chars = string.ascii_uppercase + string.digits
