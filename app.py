@@ -27,12 +27,12 @@ IMAGE_GEN_TIME = 60
 POSTS_PER_PAGE = 20  # 20
 MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 3  # 2 or 3
+USER_POSTS_PER_MIN = 1  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 post_counter = 1
 MAX_REPEATING_CHARACTERS = 20
-MAX_POSTS_PER_FINGERPRINT = 3
+MAX_POSTS_PER_FINGERPRINT = 1
 message_board = []
 post_counts = {}
 fingerprint_post_counts = {}
