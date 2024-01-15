@@ -194,6 +194,7 @@ def post():
     global post_counts, post_counter
     message = request.form.get('message')
     ip_address = request.remote_addr
+    print(f"User IP address: {ip_address}")
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
