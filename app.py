@@ -2,7 +2,7 @@ import base64
 from datetime import datetime, timedelta
 import re
 from io import BytesIO
-from ipaddress import ip_address, ip_network
+
 from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
@@ -36,40 +36,14 @@ MAX_POSTS_PER_FINGERPRINT = 3
 message_board = []
 post_counts = {}
 fingerprint_post_counts = {}
-banned_ips = set()
+
 logging.basicConfig(level=logging.DEBUG)
-banned_ip_ranges = set()
-@app.route('/ban_ip_page')
-def ban_ip_page():
-    return render_template('ban_ip_page.html')
 
-@app.route('/ban_ip', methods=['POST'])
-def ban_ip():
-    password = request.form.get('password')
-    ip_to_ban = request.form.get('ip')
-
-    # Add a simple password check (replace 'your_admin_password' with your actual admin password)
-    if password != 'B0r3alB0r3al':
-        return 'Invalid password. Access denied.'
-
-    # Check if the IP address is already banned
-    if ip_to_ban in banned_ips:
-        return f'IP address {ip_to_ban} is already banned.'
-
-    # Check if the IP address is within the specified range to ban
-    if ip_to_ban.startswith("64.42.179.59"):
-        # Ban the IP address
-        banned_ips.add(ip_to_ban)
-        return f'IP address {ip_to_ban} has been banned.'
-    else:
-        return f'IP address {ip_to_ban} is not in the banned range.'
 
 def generate_captcha_image():
     captcha_length = 6
     captcha_chars = string.ascii_uppercase + string.digits
-    captcha_code_list = [random.choice(captcha_chars) for _ in range(captcha_length - 1)]
-    captcha_code_list.insert(random.randint(0, captcha_length - 1), random.choice('!@#$%&'))
-    captcha_code = ''.join(captcha_code_list)
+    captcha_code = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
 
     # Create a larger image with the captcha code
     original_width, original_height = 150, 100
@@ -88,17 +62,7 @@ def generate_captcha_image():
     # Center the text in the larger image
     text_position = ((zoomed_width - text_width) // 2, (zoomed_height - text_height) // 2)
 
-    # Draw the text on the image
     draw.text(text_position, captcha_code, font=font, fill=(0, 0, 0))
-
-    # Draw random multicolored lines on top of the text
-    num_lines = 5  # You can adjust the number of lines
-    for _ in range(num_lines):
-        line_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
-        line_width = random.randint(1, 1)
-        line_start = (random.randint(0, zoomed_width), random.randint(0, zoomed_height))
-        line_end = (random.randint(0, zoomed_width), random.randint(0, zoomed_height))
-        draw.line([line_start, line_end], fill=line_color, width=line_width)
 
     # Resize the image to the original dimensions
     image = image.resize((original_width, original_height), Image.ANTIALIAS)
@@ -206,7 +170,7 @@ def snake():
     return render_template('snake.html')
 
 
-# Existing code...
+# In the home route
 @app.route('/')
 def home():
     captcha_code, captcha_image = generate_captcha_image()
@@ -221,7 +185,7 @@ def home():
 
     messages_to_display = reversed_message_board[start_index:end_index]
 
-    # Pass only the captcha image to the template
+    # Pass both messages and captcha information to the template
     return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page, captcha_image=captcha_image)
 
 
@@ -229,45 +193,7 @@ def home():
 def post():
     global post_counts, post_counter
     message = request.form.get('message')
-    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
-
-    print(f"IP Address of the user who posted: {ip_address}")
-
-    # Check if the IP address is banned
-    if ip_address in banned_ips:
-        return jsonify({'error': 'Error: Your IP address is banned from posting.'})
-
-    # Check for similarity with all existing posts
-    user_captcha = request.form.get('captcha', '')
-    stored_captcha = session.get('captcha', '')
-
-    if user_captcha.upper() != stored_captcha:
-        return jsonify({'error': 'Error: CAPTCHA verification failed.'})
-
-    device_fingerprint = generate_device_fingerprint()
-
-    # Check if the fingerprint has exceeded the rate limit
-    if not check_fingerprint_rate_limit(device_fingerprint):
-        return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute for this device.'})
-
-    # Check if the user has posted before
-    if ip_address in post_counts:
-        count, timestamp = post_counts[ip_address]
-        time_diff = datetime.now() - timestamp
-
-        if time_diff > POST_LIMIT_DURATION:
-            post_counts[ip_address] = (1, datetime.now())
-        elif count >= USER_POSTS_PER_MIN:
-            remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
-            return jsonify({
-                'error': f'Error: You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'})
-        else:
-            post_counts[ip_address] = (count + 1, datetime.now())
-            print(f"User with IP {ip_address} has posted again.")
-    else:
-        post_counts[ip_address] = (1, datetime.now())
-        print(f"New user with IP {ip_address} has posted.")
-
+    ip_address = request.remote_addr
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
@@ -352,7 +278,6 @@ def post():
                 'post_number': post_counter,
                 'timestamp': timestamp,
                 'message': message,
-                'ip_address': ip_address,
             }
             post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
@@ -368,7 +293,6 @@ def post():
             'post_number': post_counter,
             'timestamp': timestamp,
             'message': message,
-            'ip_address': ip_address,
             'replies': [],
         }
         post_counter += 1
@@ -411,7 +335,6 @@ def api():
             'post_number': post['post_number'],
             'timestamp': post['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
             'message': post['message'],
-            'ip_address': post['ip_address'],  # Include IP address here
         }
 
         if 'replies' in post:
@@ -421,7 +344,6 @@ def api():
                     'post_number': reply['post_number'],
                     'timestamp': reply['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
                     'message': reply['message'],
-                    'ip_address': reply['ip_address'],  # Include IP address here
                 }
                 post_info['replies'].append(reply_info)
 
