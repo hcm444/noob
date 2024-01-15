@@ -312,7 +312,7 @@ def post():
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
 
-        print(f"Post successful - IP: {ip_address}, Counter: {ip_post_counts[ip_address]}")
+    print(f"Post successful - IP: {ip_address}, Counter: {ip_post_counts[ip_address]}")
 
     return 'Post successfully created'
 
