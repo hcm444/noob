@@ -224,7 +224,10 @@ def home():
 def post():
     global post_counts, post_counter
     message = request.form.get('message')
-    ip_address = request.remote_addr
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+
+
+
     print(f"IP Address of the user who posted: {ip_address}")
     # Check if the IP address is banned
     if ip_address in banned_ips:
