@@ -15,7 +15,7 @@ import random
 import string
 from difflib import SequenceMatcher
 
-
+post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'your_secret_key'  # Replace with a secure secret key
 
@@ -200,6 +200,7 @@ def post():
     global post_counts, post_counter, ip_post_counts
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
+    
 
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
@@ -238,7 +239,8 @@ def post():
 
     if message.strip() == '>>':
         return jsonify({'error': 'Error: Posting ">>" by itself is not allowed.'})
-
+    with post_counts_lock:
+        ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
     if ip_address in post_counts:
         count, timestamp = post_counts[ip_address]
         time_diff = datetime.now() - timestamp
