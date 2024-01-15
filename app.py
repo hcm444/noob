@@ -189,12 +189,15 @@ def home():
     return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page, captcha_image=captcha_image)
 
 
+ip_post_counts = {}
+
 @app.route('/post', methods=['POST'])
 def post():
-    global post_counts, post_counter
+    global post_counts, post_counter, ip_post_counts
     message = request.form.get('message')
-    ip_address = request.remote_addr
+    ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
     print(f"User IP address: {ip_address}")
+
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
@@ -207,6 +210,12 @@ def post():
     # Check if the fingerprint has exceeded the rate limit
     if not check_fingerprint_rate_limit(device_fingerprint):
         return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute for this device.'})
+
+    # Increment the post count for the current IP address
+    ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
+
+    # Print the IP address along with the post count
+    print(f"Posts by {ip_address}: {ip_post_counts[ip_address]}")
 
     for existing_post in message_board:
         similarity = calculate_similarity_ratio(existing_post['message'], message)
