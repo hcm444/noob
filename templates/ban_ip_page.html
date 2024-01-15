@@ -7,11 +7,12 @@
 </head>
 <body>
     <h1>Ban IP Page</h1>
+    <p>Enter the administrator password and the IP address or range you want to ban. You can enter a single IP address or an IP range using CIDR notation (e.g., 192.168.0.1 or 192.168.0.0/24).</p>
     <form action="/ban_ip" method="post">
         <label for="password">Password:</label>
         <input type="password" id="password" name="password" required><br>
 
-        <label for="ip">IP Address to Ban:</label>
+        <label for="ip">IP Address or Range to Ban:</label>
         <input type="text" id="ip" name="ip" required><br>
 
         <button type="submit">Ban IP</button>
