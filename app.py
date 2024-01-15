@@ -43,7 +43,9 @@ logging.basicConfig(level=logging.DEBUG)
 def generate_captcha_image():
     captcha_length = 6
     captcha_chars = string.ascii_uppercase + string.digits
-    captcha_code = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
+    captcha_code_list = [random.choice(captcha_chars) for _ in range(captcha_length - 1)]
+    captcha_code_list.insert(random.randint(0, captcha_length - 1), random.choice('!@#$%&'))
+    captcha_code = ''.join(captcha_code_list)
 
     # Create a larger image with the captcha code
     original_width, original_height = 150, 100
