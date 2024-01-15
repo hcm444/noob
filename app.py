@@ -232,7 +232,6 @@ def post():
     ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
 
 
-
     print(f"IP Address of the user who posted: {ip_address}")
     # Check if the IP address is banned
     if ip_address in banned_ips:
@@ -322,6 +321,7 @@ def post():
                 'post_number': post_counter,
                 'timestamp': timestamp,
                 'message': message,
+                'ip_address': ip_address,
             }
             post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
@@ -337,6 +337,7 @@ def post():
             'post_number': post_counter,
             'timestamp': timestamp,
             'message': message,
+            'ip_address': ip_address,
             'replies': [],
         }
         post_counter += 1
@@ -379,6 +380,7 @@ def api():
             'post_number': post['post_number'],
             'timestamp': post['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
             'message': post['message'],
+            'ip_address': post['ip_address'],  # Include IP address here
         }
 
         if 'replies' in post:
@@ -388,6 +390,7 @@ def api():
                     'post_number': reply['post_number'],
                     'timestamp': reply['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
                     'message': reply['message'],
+                    'ip_address': reply['ip_address'],  # Include IP address here
                 }
                 post_info['replies'].append(reply_info)
 
