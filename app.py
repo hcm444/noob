@@ -229,32 +229,13 @@ def home():
 def post():
     global post_counts, post_counter
     message = request.form.get('message')
-    full_ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
+    ip_address = request.headers.get('X-Forwarded-For', request.remote_addr)
 
-    # Extract the first part of the IP address
-    first_part_of_ip = full_ip_address.split(',')[0]
 
-    print(f"IP Address of the user who posted: {first_part_of_ip}")
-
+    print(f"IP Address of the user who posted: {ip_address}")
     # Check if the IP address is banned
-    if first_part_of_ip in banned_ips:
+    if ip_address in banned_ips:
         return jsonify({'error': 'Error: Your IP address is banned from posting.'})
-
-    # Check if the IP address has exceeded the rate limit
-    if first_part_of_ip in post_counts:
-        count, timestamp = post_counts[first_part_of_ip]
-        time_diff = datetime.now() - timestamp
-
-        if time_diff > POST_LIMIT_DURATION:
-            post_counts[first_part_of_ip] = (1, datetime.now())
-        elif count >= USER_POSTS_PER_MIN:
-            remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
-            return jsonify({
-                'error': f'Error: You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'})
-        else:
-            post_counts[first_part_of_ip] = (count + 1, datetime.now())
-    else:
-        post_counts[first_part_of_ip] = (1, datetime.now())
 
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
