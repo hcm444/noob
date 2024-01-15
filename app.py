@@ -200,7 +200,6 @@ def post():
     global post_counts, post_counter, ip_post_counts
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
-    print(f"User IP address: {ip_address}")
 
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
@@ -219,7 +218,6 @@ def post():
     ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
 
     # Print the IP address along with the post count
-    print(f"Posts by {ip_address}: {ip_post_counts[ip_address]}")
 
     for existing_post in message_board:
         similarity = calculate_similarity_ratio(existing_post['message'], message)
@@ -313,6 +311,8 @@ def post():
         message_board.append(post)
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
+
+        print(f"Post successful - IP: {ip_address}, Counter: {ip_post_counts[ip_address]}")
 
     return 'Post successfully created'
 
