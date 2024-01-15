@@ -36,10 +36,29 @@ MAX_POSTS_PER_FINGERPRINT = 3
 message_board = []
 post_counts = {}
 fingerprint_post_counts = {}
-
+banned_ips = set()
 logging.basicConfig(level=logging.DEBUG)
 
+@app.route('/ban_ip_page')
+def ban_ip_page():
+    return render_template('ban_ip_page.html')
 
+@app.route('/ban_ip', methods=['POST'])
+def ban_ip():
+    password = request.form.get('password')
+    ip_to_ban = request.form.get('ip')
+
+    # Add a simple password check (replace 'your_admin_password' with your actual admin password)
+    if password != 'B0r3alB0r3al':
+        return 'Invalid password. Access denied.'
+
+    # Check if the IP address is already banned
+    if ip_to_ban in banned_ips:
+        return f'IP address {ip_to_ban} is already banned.'
+
+    # Ban the IP address
+    banned_ips.add(ip_to_ban)
+    return f'IP address {ip_to_ban} has been banned.'
 def generate_captcha_image():
     captcha_length = 6
     captcha_chars = string.ascii_uppercase + string.digits
@@ -206,6 +225,11 @@ def post():
     global post_counts, post_counter
     message = request.form.get('message')
     ip_address = request.remote_addr
+    print(f"IP Address of the user who posted: {ip_address}")
+    # Check if the IP address is banned
+    if ip_address in banned_ips:
+        return jsonify({'error': 'Error: Your IP address is banned from posting.'})
+
     # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
