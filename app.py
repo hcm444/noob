@@ -32,7 +32,7 @@ MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 post_counter = 1
 MAX_REPEATING_CHARACTERS = 20
-MAX_POSTS_PER_FINGERPRINT = 1
+MAX_POSTS_PER_FINGERPRINT = 5
 message_board = []
 post_counts = {}
 fingerprint_post_counts = {}
@@ -92,17 +92,19 @@ def generate_device_fingerprint():
 
 
 def check_fingerprint_rate_limit(fingerprint):
-    # Check if the fingerprint has exceeded the rate limit
     if fingerprint in fingerprint_post_counts:
         count, timestamp = fingerprint_post_counts[fingerprint]
         time_diff = datetime.now() - timestamp
 
-        if time_diff > POST_LIMIT_DURATION:
+        # Calculate the cooldown period based on the user's posting frequency
+        cooldown_factor = min(count, MAX_POSTS_PER_FINGERPRINT) / MAX_POSTS_PER_FINGERPRINT
+        cooldown_duration = POST_LIMIT_DURATION * cooldown_factor
+
+        if time_diff > cooldown_duration:
             fingerprint_post_counts[fingerprint] = (1, datetime.now())
-        elif count >= MAX_POSTS_PER_FINGERPRINT:
-            return False  # Rate limit exceeded
         else:
-            fingerprint_post_counts[fingerprint] = (count + 1, datetime.now())
+            return False  # Rate limit exceeded
+
     else:
         fingerprint_post_counts[fingerprint] = (1, datetime.now())
 
