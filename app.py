@@ -2,7 +2,7 @@ import base64
 from datetime import datetime, timedelta
 import re
 from io import BytesIO
-
+from ipaddress import ip_address, ip_network
 from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
@@ -38,7 +38,7 @@ post_counts = {}
 fingerprint_post_counts = {}
 banned_ips = set()
 logging.basicConfig(level=logging.DEBUG)
-
+banned_ip_ranges = set()
 @app.route('/ban_ip_page')
 def ban_ip_page():
     return render_template('ban_ip_page.html')
@@ -52,13 +52,15 @@ def ban_ip():
     if password != 'B0r3alB0r3al':
         return 'Invalid password. Access denied.'
 
-    # Check if the IP address is already banned
-    if ip_to_ban in banned_ips:
-        return f'IP address {ip_to_ban} is already banned.'
+    # Check if the input is a single IP address or an IP range
+    try:
+        ip_network_object = ip_network(ip_to_ban, strict=False)
+    except ValueError:
+        return 'Invalid IP address or range format.'
 
-    # Ban the IP address
-    banned_ips.add(ip_to_ban)
-    return f'IP address {ip_to_ban} has been banned.'
+    # Ban the IP address or range
+    banned_ip_ranges.add(ip_network_object)
+    return f'IP address or range {ip_to_ban} has been banned.'
 def generate_captcha_image():
     captcha_length = 6
     captcha_chars = string.ascii_uppercase + string.digits
