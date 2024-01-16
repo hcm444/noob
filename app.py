@@ -12,20 +12,27 @@ from flask import Flask, render_template, request, jsonify, session
 from difflib import SequenceMatcher
 
 from captcha import generate_captcha_image
+from flask import Flask, render_template, request
+from flask_wtf.csrf import CSRFProtect
+from flask_wtf import FlaskForm
+from wtforms import StringField, SubmitField
 
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = 'your_secret_key'  # Replace with a secure secret key
 
+csrf = CSRFProtect(app)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
-
+class MyForm(FlaskForm):
+    message = StringField('Message')
+    submit = SubmitField('Submit')
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
 POSTS_PER_PAGE = 20  # 20
 MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 1  # 2 or 3
+USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 post_counter = 1
@@ -152,14 +159,17 @@ def home():
 
     # Pass both messages and captcha information to the template
     return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page,
-                           captcha_image=captcha_image)
+                           captcha_image=captcha_image,form=MyForm())
 
 
 ip_post_counts = {}
 
 
 @app.route('/post', methods=['POST'])
+
+@app.route('/post', methods=['POST'])
 def post():
+    csrf.protect()
     global post_counts, post_counter, ip_post_counts
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr

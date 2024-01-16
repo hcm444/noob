@@ -87,6 +87,7 @@
 
 <div class="new-post">
     <form action="/post" method="post">
+          {{ form.csrf_token }}
 
         <!-- Captcha Section -->
         <div class="field">
