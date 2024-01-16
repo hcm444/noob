@@ -66,12 +66,7 @@ def generate_captcha_image():
     # Make the text white
     draw.text(text_position, captcha_digit, font=font, fill=(255, 255, 255))
 
-    # Add random green static
-    static_density = 10000  # You can adjust the density of static
-    for _ in range(static_density):
-        x = random.randint(0, original_width - 1)
-        y = random.randint(0, original_height - 1)
-        draw.point((x, y), fill=(0, 255, 0))  # Green static
+
 
     # Zoom into the text
     zoom_factor = 0.05
