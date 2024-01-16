@@ -1,7 +1,5 @@
-import base64
 from datetime import datetime, timedelta
 import re
-from io import BytesIO
 
 from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
@@ -10,10 +8,10 @@ import colorsys
 import time
 import csv
 import logging
-from flask import Flask, render_template, request, jsonify, session, send_file
-import random
-import string
+from flask import Flask, render_template, request, jsonify, session
 from difflib import SequenceMatcher
+
+from captcha import generate_captcha_image
 
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
@@ -38,44 +36,6 @@ post_counts = {}
 fingerprint_post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
-
-
-def generate_captcha_image():
-    captcha_length = 7
-    captcha_chars = string.ascii_uppercase + string.digits
-    captcha_code = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
-
-    # Create a larger image with the captcha code
-    original_width, original_height = 150, 100
-    zoom_factor = 0.3  # Increase this value to zoom in further
-    zoomed_width, zoomed_height = int(original_width * zoom_factor), int(original_height * zoom_factor)
-
-    image = Image.new('RGB', (zoomed_width, zoomed_height), color=(255, 255, 255))
-    draw = ImageDraw.Draw(image)
-
-    # Use the default font
-    font = ImageFont.load_default()
-
-    # Get the size of the text to be drawn
-    text_width, text_height = draw.textsize(captcha_code, font=font)
-
-    # Center the text in the larger image
-    text_position = ((zoomed_width - text_width) // 2, (zoomed_height - text_height) // 2)
-
-    draw.text(text_position, captcha_code, font=font, fill=(0, 0, 0))
-
-    # Resize the image to the original dimensions
-    image = image.resize((original_width, original_height), Image.ANTIALIAS)
-
-    # Save the image to a BytesIO object
-    image_io = BytesIO()
-    image.save(image_io, 'PNG')
-    image_io.seek(0)
-
-    # Convert the image data to base64 encoding
-    base64_image = base64.b64encode(image_io.getvalue()).decode('utf-8')
-
-    return captcha_code, base64_image
 
 
 def generate_device_fingerprint():
@@ -209,14 +169,13 @@ def post():
     stored_captcha = session.get('captcha', '')
 
     if user_captcha.upper() != stored_captcha:
-        return jsonify({'error': 'Error: CAPTCHA verification failed.'})
+        return 'CAPTCHA verification failed.'
 
     device_fingerprint = generate_device_fingerprint()
 
     # Check if the fingerprint has exceeded the rate limit
     if not check_fingerprint_rate_limit(device_fingerprint):
-        return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute for this device.'})
-
+        return 'Exceeded the maximum number of posts per minute for this device.'
     # Increment the post count for the current IP address
     ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
 
@@ -226,21 +185,19 @@ def post():
         similarity = calculate_similarity_ratio(existing_post['message'], message)
 
         if similarity > YOUR_THRESHOLD:
-            return jsonify({'error': f'Error: This message is {100 * similarity}% similar to an existing post.'})
-
+            return f'This message is {100 * similarity}% similar to an existing post.'
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
-        return jsonify({
-            'error': f'Error: Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'})
+        return f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
 
     if not message or message.isspace():
-        return jsonify({'error': 'Error: Message should not be empty or contain only whitespace.'})
+        return 'Message should not be empty or contain only whitespace.'
 
     if len(message) > MAX_CHAR:
-        return jsonify({'error': f'Error: Message should not exceed {MAX_CHAR} characters.'})
+        return f'Message should not exceed {MAX_CHAR} characters.'
 
     if message.strip() == '>>':
-        return jsonify({'error': 'Error: Posting ">>" by itself is not allowed.'})
+        return 'Posting ">>" by itself is not allowed.'
     with post_counts_lock:
         ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
     if ip_address in post_counts:
@@ -251,8 +208,7 @@ def post():
             post_counts[ip_address] = (1, datetime.now())
         elif count >= USER_POSTS_PER_MIN:
             remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
-            return jsonify({
-                'error': f'Error: You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'})
+            return f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
         else:
             post_counts[ip_address] = (count + 1, datetime.now())
     else:
@@ -285,10 +241,10 @@ def post():
         if parent_post:
 
             if message_exists_in_post(parent_post, message):
-                return jsonify({'error': 'Error: This message already exists as a reply to the referenced post.'})
+                return 'This message already exists as a reply to the referenced post.'
 
             if 'replies' in parent_post and len(parent_post['replies']) >= MAX_REPLIES:
-                return jsonify({'error': f'Error: Maximum of {MAX_REPLIES} replies per parent post exceeded.'})
+                return f'Maximum of {MAX_REPLIES} replies per parent post exceeded.'
 
             reply = {
                 'post_number': post_counter,
@@ -300,10 +256,10 @@ def post():
             message_board.remove(parent_post)
             message_board.append(parent_post)
         else:
-            return jsonify({'error': 'Error: Referenced post not found.'})
+            return 'Referenced post not found.'
     else:
         if any(message_exists_in_post(post, message) for post in message_board):
-            return jsonify({'error': 'Error: This message already exists as a parent post or a reply.'})
+            return 'This message already exists as a parent post or a reply.'
 
         post = {
             'post_number': post_counter,
@@ -318,8 +274,11 @@ def post():
 
     print(f"Post successful - IP: {ip_address}, Counter: {ip_post_counts[ip_address]}")
 
-    return 'Post successfully created'
+    return 'Post successfully created.'
 
+@app.route('/about')
+def about():
+    return render_template('about.html')
 
 @app.route('/statistics')
 def statistics():

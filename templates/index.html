@@ -95,6 +95,8 @@
             <div class="control">
                 <textarea class="textarea textarea-wrap" name="captcha" id="captcha" rows="1" cols="50" required></textarea>
                 <button class="toggle-replies-button" type="submit"> > </button>
+                <a href="{{ url_for('home') }}" class="return-button"> ~ </a>
+
             </div>
         </div>
 
@@ -104,8 +106,6 @@
                 <textarea class="textarea textarea-wrap" name="message" rows="4" cols="50" required></textarea>
             </div>
         </div>
-
-
     </form>
 </div>
 
@@ -159,6 +159,8 @@
 <a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
 <a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
 <a class="toggle-replies-button" href="{{ url_for('statistics')}}"> % </a>
+<a class="toggle-replies-button" href="{{ url_for('about')}}"> ? </a>
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function() {
