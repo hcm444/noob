@@ -11,6 +11,10 @@
             margin: 20px;
         }
 
+        #captcha {
+        resize: none; /* This property disables the resizing */
+        }
+
         .message {
             border: 1px solid #00FF00; /* Green border */
             padding: 10px;
@@ -82,25 +86,29 @@
 
 
 <div class="new-post">
-    <img src="data:image/png;base64,{{ captcha_image }}" alt="Captcha Image">
     <form action="/post" method="post">
-        <input type="hidden" name="parent_post" value="{{ parent_post_number }}">
 
-        <label for="captcha">{{ captcha }}</label>
-        <input type="text" id="captcha" name="captcha" required>
+        <!-- Captcha Section -->
+        <div class="field">
+            <img src="data:image/png;base64,{{ captcha_image }}" alt="Captcha Image" style="float: left; margin-right: 10px;">
+            <label for="captcha">{{ captcha }}</label>
+            <div class="control">
+                <textarea class="textarea textarea-wrap" name="captcha" id="captcha" rows="1" cols="50" required></textarea>
+                <button class="toggle-replies-button" type="submit"> > </button>
+            </div>
+        </div>
 
+        <!-- Post Message Section -->
         <div class="field">
             <div class="control">
                 <textarea class="textarea textarea-wrap" name="message" rows="4" cols="50" required></textarea>
             </div>
         </div>
-        <div class="field is-grouped">
-            <div class="control">
-                <button class="toggle-replies-button" type="submit"> > </button>
-            </div>
-        </div>
+
+
     </form>
 </div>
+
 
 
 

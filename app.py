@@ -41,7 +41,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 def generate_captcha_image():
-    captcha_length = 6
+    captcha_length = 7
     captcha_chars = string.ascii_uppercase + string.digits
     captcha_code = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
 
