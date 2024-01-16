@@ -2,8 +2,7 @@ import base64
 from datetime import datetime, timedelta
 import re
 from io import BytesIO
-import numpy as np
-from tensorflow.keras.models import load_model
+
 from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
@@ -40,52 +39,43 @@ fingerprint_post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
-model = None
-def load_model_instance():
-    global model
-    if model is None:
-        model = load_model("mnist_model.h5")
-def generate_captcha_image():
-    captcha_digit = str(random.randint(0, 9))
 
-    # Create an image for the captcha digit
-    original_width, original_height = 280, 280
-    image = Image.new('RGB', (original_width, original_height), color=(0, 0, 0))  # Set background to black
+def generate_captcha_image():
+    captcha_length = 6
+    captcha_chars = string.ascii_uppercase + string.digits
+    captcha_code = ''.join(random.choice(captcha_chars) for _ in range(captcha_length))
+
+    # Create a larger image with the captcha code
+    original_width, original_height = 150, 100
+    zoom_factor = 0.3  # Increase this value to zoom in further
+    zoomed_width, zoomed_height = int(original_width * zoom_factor), int(original_height * zoom_factor)
+
+    image = Image.new('RGB', (zoomed_width, zoomed_height), color=(255, 255, 255))
     draw = ImageDraw.Draw(image)
 
-    # Use the default font and increase the font size
-    font_size = 40
+    # Use the default font
     font = ImageFont.load_default()
 
     # Get the size of the text to be drawn
-    text_width, text_height = draw.textsize(captcha_digit, font=font)
+    text_width, text_height = draw.textsize(captcha_code, font=font)
 
-    # Center the text in the image
-    text_position = ((original_width - text_width) // 2, (original_height - text_height) // 2)
+    # Center the text in the larger image
+    text_position = ((zoomed_width - text_width) // 2, (zoomed_height - text_height) // 2)
 
-    # Make the text white
-    draw.text(text_position, captcha_digit, font=font, fill=(255, 255, 255))
+    draw.text(text_position, captcha_code, font=font, fill=(0, 0, 0))
 
+    # Resize the image to the original dimensions
+    image = image.resize((original_width, original_height), Image.ANTIALIAS)
 
-
-    # Zoom into the text
-    zoom_factor = 0.05
-    zoomed_width = int(original_width / zoom_factor)
-    zoomed_height = int(original_height / zoom_factor)
-    zoomed_image = image.resize((zoomed_width, zoomed_height), resample=Image.BICUBIC)
-
-    # Save the zoomed image as 280x280
-    final_image = Image.new('RGB', (original_width, original_height), color=(0, 0, 0))
-    final_image.paste(zoomed_image, ((original_width - zoomed_width) // 2, (original_height - zoomed_height) // 2))
-
-    # Convert the final image to base64 encoding
+    # Save the image to a BytesIO object
     image_io = BytesIO()
-    final_image.save(image_io, 'PNG')
+    image.save(image_io, 'PNG')
     image_io.seek(0)
+
+    # Convert the image data to base64 encoding
     base64_image = base64.b64encode(image_io.getvalue()).decode('utf-8')
 
-    return captcha_digit, base64_image
-
+    return captcha_code, base64_image
 
 
 def generate_device_fingerprint():
@@ -120,35 +110,6 @@ def check_fingerprint_rate_limit(fingerprint):
 
     return True  # Within rate limit
 
-@app.route("/classify", methods=["POST"])
-def classify():
-    load_model_instance()  # Load the model instance if it's not already loaded
-    data = request.get_json()
-    points = data["points"]
-    canvas = np.zeros((28, 28), dtype=np.uint8)
-    for point in points:
-        x = int(point["x"])
-        y = int(point["y"])
-        canvas[y, x] = 255
-    image = Image.fromarray(canvas)
-    image = image.convert("L")  # Convert to grayscale
-    image = image.resize((28, 28))
-    image = np.array(image) / 255.0
-    image = np.expand_dims(image, axis=0)
-    image = np.expand_dims(image, axis=-1)
-    predictions = model.predict(image)
-    predicted_label = np.argmax(predictions[0])
-    image_data = image.tobytes()
-
-    print(f"Predicted Label: {predicted_label}")
-    return jsonify({
-        "predicted_label": int(predicted_label),
-        "image_data": image_data.decode("latin1")  # Convert bytes to string for JSON serialization
-    })
-
-def save_image(canvas, image_path):
-    image = Image.fromarray(canvas)
-    image.save(image_path)
 
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
@@ -230,7 +191,8 @@ def home():
     messages_to_display = reversed_message_board[start_index:end_index]
 
     # Pass both messages and captcha information to the template
-    return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page, captcha_image=captcha_image)
+    return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page,
+                           captcha_image=captcha_image)
 
 
 ip_post_counts = {}
@@ -241,16 +203,19 @@ def post():
     global post_counts, post_counter, ip_post_counts
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
+
+    # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
 
-    # Ensure that the predicted_label is not an empty string before converting to an integer
-    predicted_label_str = request.form.get('predicted_label', '')
-    predicted_label = int(predicted_label_str) if predicted_label_str.isdigit() else -1
-
-    # Check if the predicted label matches the user-provided captcha
-    if user_captcha and predicted_label != int(user_captcha):
+    if user_captcha.upper() != stored_captcha:
         return jsonify({'error': 'Error: CAPTCHA verification failed.'})
+
+    device_fingerprint = generate_device_fingerprint()
+
+    # Check if the fingerprint has exceeded the rate limit
+    if not check_fingerprint_rate_limit(device_fingerprint):
+        return jsonify({'error': 'Error: Exceeded the maximum number of posts per minute for this device.'})
 
     # Increment the post count for the current IP address
     ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
@@ -266,7 +231,7 @@ def post():
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
         return jsonify({
-                           'error': f'Error: Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'})
+            'error': f'Error: Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'})
 
     if not message or message.isspace():
         return jsonify({'error': 'Error: Message should not be empty or contain only whitespace.'})
@@ -484,5 +449,3 @@ image_generation_thread.start()
 
 if __name__ == '__main__':
     app.run(debug=True)
-    load_model_instance()  # Load the model instance when the script is run
-    app.run()
