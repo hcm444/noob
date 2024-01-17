@@ -7,6 +7,7 @@ import threading
 import colorsys
 import time
 import csv
+import os
 import logging
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
@@ -405,8 +406,11 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
-    print("Initializing the database...")
-    init_db()
-    print("Database initialization complete.")
+    if os.path.exists(DATABASE):
+        print(f"Database file '{DATABASE}' already exists.")
+    else:
+        print("Initializing the database...")
+        init_db()
+        print("Database initialization complete.")
     app.run(debug=True)
 
