@@ -78,6 +78,7 @@ def load_posts_from_database():
 
 
 
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -451,10 +452,6 @@ def generate_message_board_image():
                 csv_writer.writerow(row_data)
 
         time.sleep(IMAGE_GEN_TIME)
-
-
-image_generation_thread = threading.Thread(target=generate_message_board_image)
-image_generation_thread.start()
 
 if __name__ == '__main__':
     with app.app_context():
