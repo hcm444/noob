@@ -63,14 +63,18 @@ def load_posts_from_database():
         print("Posts loaded from the database:", message_board)
 
         # Find the maximum post_number from the loaded posts
-        max_post_number = max([post['post_number'] for post in message_board], default=0)
+        max_post_number_db = max([post['post_number'] for post in message_board], default=0)
 
-        # Set post_counter to start from the next available post number
-        post_counter = max_post_number + 1
+        # Find the maximum post_number from the posts made during the server's runtime
+        max_post_number_runtime = max([post['post_number'] for post in message_board], default=0)
+
+        # Set post_counter to start from the greater of the two maximum post numbers
+        post_counter = max(max_post_number_db, max_post_number_runtime) + 1
 
     except Exception as e:
         print(f"Error loading posts from the database: {e}")
         app.logger.error(f"Error loading posts from the database: {e}")
+
 
 
 
