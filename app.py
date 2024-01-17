@@ -40,7 +40,7 @@ with sqlite3.connect(DATABASE) as connection:
     ''')
 
 def load_posts_from_database():
-    global message_board
+    global message_board, post_counter
     try:
         db = get_db()
         cursor = db.cursor()
@@ -62,9 +62,16 @@ def load_posts_from_database():
 
         print("Posts loaded from the database:", message_board)
 
+        # Find the maximum post_number from the loaded posts
+        max_post_number = max([post['post_number'] for post in message_board], default=0)
+
+        # Set post_counter to start from the next available post number
+        post_counter = max_post_number + 1
+
     except Exception as e:
         print(f"Error loading posts from the database: {e}")
         app.logger.error(f"Error loading posts from the database: {e}")
+
 
 
 def get_db():
