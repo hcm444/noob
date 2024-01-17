@@ -444,10 +444,14 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
-    load_posts_from_database()
+    with app.app_context():
+        # Load posts from the database during initialization
+        load_posts_from_database()
 
-    # Start the image generation thread
-    image_generation_thread = threading.Thread(target=generate_message_board_image)
-    image_generation_thread.start()
-    app.run(debug=True)
+        # Start the image generation thread
+        image_generation_thread = threading.Thread(target=generate_message_board_image)
+        image_generation_thread.start()
+
+        # Run the Flask application
+        app.run(debug=True)
 
