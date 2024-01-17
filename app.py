@@ -17,6 +17,8 @@ from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
+import sqlite3
+from flask import g
 
 DATABASE = 'posts.db'
 
