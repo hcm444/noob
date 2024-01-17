@@ -26,6 +26,7 @@ DATABASE = 'posts.db'
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
+        print("Creating a new database connection...")
         db = g._database = sqlite3.connect(DATABASE)
         db.row_factory = sqlite3.Row
     return db
