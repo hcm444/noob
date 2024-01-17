@@ -48,14 +48,6 @@ def get_db():
         db.row_factory = sqlite3.Row
     return db
 
-def init_db():
-    print("Initializing the database...")
-    with app.app_context():
-        with app.open_resource('schema.sql', mode='r') as f:
-            schema_contents = f.read()
-            print(f"Schema Contents:\n{schema_contents}")
-            db.cursor().executescript(schema_contents)
-        db.commit()
 
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
@@ -426,12 +418,5 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
-    init_db()
-    if os.path.exists(DATABASE):
-        print(f"Database file '{DATABASE}' already exists.")
-    else:
-        print("Initializing the database...")
-        init_db()
-        print("Database initialization complete.")
     app.run(debug=True)
 
