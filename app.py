@@ -21,7 +21,11 @@ import secrets
 import sqlite3
 from flask import g
 
-DATABASE = '/posts.db'
+# Get the absolute path to the current directory
+current_directory = os.path.abspath(os.path.dirname(__file__))
+
+# Use the absolute path to create the DATABASE path
+DATABASE = os.path.join(current_directory, 'posts.db')
 
 def get_db():
     db = getattr(g, '_database', None)
