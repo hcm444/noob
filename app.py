@@ -406,6 +406,7 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
+    init_db()
     if os.path.exists(DATABASE):
         print(f"Database file '{DATABASE}' already exists.")
     else:
