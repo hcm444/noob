@@ -75,7 +75,6 @@ def load_posts_from_database():
 
 
 
-
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
