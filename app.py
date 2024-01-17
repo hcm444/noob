@@ -8,7 +8,7 @@ import colorsys
 import time
 import csv
 import logging
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
 
 from captcha import generate_captcha_image
@@ -19,7 +19,6 @@ from wtforms import StringField, SubmitField
 import secrets
 
 secret_key = secrets.token_hex(32)
-print(secret_key)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = secret_key
@@ -40,8 +39,7 @@ USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 post_counter = 1
-MAX_REPEATING_CHARACTERS = 20
-MAX_POSTS_PER_FINGERPRINT = 5
+MAX_REPEATING_CHARACTERS = 10
 message_board = []
 post_counts = {}
 fingerprint_post_counts = {}
@@ -49,46 +47,9 @@ fingerprint_post_counts = {}
 logging.basicConfig(level=logging.DEBUG)
 
 
-def generate_device_fingerprint():
-    user_agent = request.headers.get('User-Agent', '')
-    full_ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
-
-    # Extract the relevant part of the IP address (e.g., first three octets)
-    ip_prefix = '.'.join(full_ip_address.split('.')[:3])
-
-    # Combine relevant information to create a fingerprint
-    fingerprint = f"{user_agent}_{ip_prefix}"
-
-    return fingerprint
-
-
-def check_fingerprint_rate_limit(fingerprint):
-    if fingerprint in fingerprint_post_counts:
-        count, timestamp = fingerprint_post_counts[fingerprint]
-        time_diff = datetime.now() - timestamp
-
-        # Calculate the cooldown period based on the user's posting frequency
-        cooldown_factor = min(count, MAX_POSTS_PER_FINGERPRINT) / MAX_POSTS_PER_FINGERPRINT
-        cooldown_duration = POST_LIMIT_DURATION * cooldown_factor
-
-        if time_diff > cooldown_duration:
-            fingerprint_post_counts[fingerprint] = (1, datetime.now())
-        else:
-            return False  # Rate limit exceeded
-
-    else:
-        fingerprint_post_counts[fingerprint] = (1, datetime.now())
-
-    return True  # Within rate limit
-
-
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
     return bool(repeating_pattern.search(message))
-
-
-def calculate_similarity_ratio(post1, post2):
-    return SequenceMatcher(None, post1, post2).ratio()
 
 
 def delete_oldest_parent_post():
@@ -163,13 +124,10 @@ def home():
 
     # Pass both messages and captcha information to the template
     return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page,
-                           captcha_image=captcha_image,form=MyForm())
+                           captcha_image=captcha_image, form=MyForm(), error_message=session.pop('error_message', None))
 
 
 ip_post_counts = {}
-
-
-@app.route('/post', methods=['POST'])
 
 @app.route('/post', methods=['POST'])
 def post():
@@ -183,35 +141,27 @@ def post():
     stored_captcha = session.get('captcha', '')
 
     if user_captcha.upper() != stored_captcha:
-        return 'CAPTCHA verification failed.'
+        session['error_message'] = 'CAPTCHA verification failed.'
+        return redirect(url_for('home'))
 
-    device_fingerprint = generate_device_fingerprint()
 
-    # Check if the fingerprint has exceeded the rate limit
-    if not check_fingerprint_rate_limit(device_fingerprint):
-        return 'Exceeded the maximum number of posts per minute for this device.'
-    # Increment the post count for the current IP address
-    ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
 
-    # Print the IP address along with the post count
-
-    for existing_post in message_board:
-        similarity = calculate_similarity_ratio(existing_post['message'], message)
-
-        if similarity > YOUR_THRESHOLD:
-            return f'This message is {100 * similarity}% similar to an existing post.'
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
-        return f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
+        session['error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
+        return redirect(url_for('home'))
 
     if not message or message.isspace():
-        return 'Message should not be empty or contain only whitespace.'
+        session['error_message'] = 'Message should not be empty or contain only whitespace.'
+        return redirect(url_for('home'))
 
     if len(message) > MAX_CHAR:
-        return f'Message should not exceed {MAX_CHAR} characters.'
+        session['error_message'] = f'Message should not exceed {MAX_CHAR} characters.'
+        return redirect(url_for('home'))
 
     if message.strip() == '>>':
-        return 'Posting ">>" by itself is not allowed.'
+        session['error_message'] = 'Posting ">>" by itself is not allowed.'
+        return redirect(url_for('home'))
     with post_counts_lock:
         ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
     if ip_address in post_counts:
@@ -222,7 +172,8 @@ def post():
             post_counts[ip_address] = (1, datetime.now())
         elif count >= USER_POSTS_PER_MIN:
             remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
-            return f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
+            session['error_message'] = f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
+            return redirect(url_for('home'))
         else:
             post_counts[ip_address] = (count + 1, datetime.now())
     else:
@@ -255,10 +206,12 @@ def post():
         if parent_post:
 
             if message_exists_in_post(parent_post, message):
-                return 'This message already exists as a reply to the referenced post.'
+                session['error_message'] = 'This message already exists as a reply to the referenced post.'
+                return redirect(url_for('home'))
 
             if 'replies' in parent_post and len(parent_post['replies']) >= MAX_REPLIES:
-                return f'Maximum of {MAX_REPLIES} replies per parent post exceeded.'
+                session['error_message'] = f'Maximum of {MAX_REPLIES} replies per parent post exceeded.'
+                return redirect(url_for('home'))
 
             reply = {
                 'post_number': post_counter,
@@ -270,10 +223,12 @@ def post():
             message_board.remove(parent_post)
             message_board.append(parent_post)
         else:
-            return 'Referenced post not found.'
+            session['error_message'] = 'Referenced post not found.'
+            return redirect(url_for('home'))
     else:
         if any(message_exists_in_post(post, message) for post in message_board):
-            return 'This message already exists as a parent post or a reply.'
+            session['error_message'] = 'This message already exists as a parent post or a reply.'
+            return redirect(url_for('home'))
 
         post = {
             'post_number': post_counter,
@@ -286,9 +241,8 @@ def post():
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
 
-    print(f"Post successful - IP: {ip_address}, Counter: {ip_post_counts[ip_address]}")
-
-    return 'Post successfully created.'
+    session['error_message'] = 'Post successfully created.'
+    return redirect(url_for('home'))
 
 @app.route('/about')
 def about():
