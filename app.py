@@ -27,6 +27,18 @@ current_directory = os.path.abspath(os.path.dirname(__file__))
 # Use the absolute path to create the DATABASE path
 DATABASE = os.path.join(current_directory, 'posts.db')
 
+with sqlite3.connect(DATABASE) as connection:
+    cursor = connection.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_number INTEGER,
+            timestamp DATETIME,
+            message TEXT,
+            parent_post_number INTEGER
+        )
+    ''')
+
 def load_posts_from_database():
     global message_board
     try:
@@ -48,22 +60,12 @@ def load_posts_from_database():
             }
             message_board.append(post)
 
+        print("Posts loaded from the database:", message_board)
+
     except Exception as e:
         print(f"Error loading posts from the database: {e}")
         app.logger.error(f"Error loading posts from the database: {e}")
 
-# Create the 'posts' table if it doesn't exist
-with sqlite3.connect(DATABASE) as connection:
-    cursor = connection.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            post_number INTEGER,
-            timestamp DATETIME,
-            message TEXT,
-            parent_post_number INTEGER
-        )
-    ''')
 
 def get_db():
     db = getattr(g, '_database', None)
