@@ -42,7 +42,7 @@ post_counter = 1
 MAX_REPEATING_CHARACTERS = 10
 message_board = []
 post_counts = {}
-fingerprint_post_counts = {}
+
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -242,6 +242,7 @@ def post():
             delete_oldest_parent_post()
 
     session['error_message'] = 'Post successfully created.'
+    print(message_board)
     return redirect(url_for('home'))
 
 @app.route('/about')
