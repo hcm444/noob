@@ -27,6 +27,35 @@ current_directory = os.path.abspath(os.path.dirname(__file__))
 # Use the absolute path to create the DATABASE path
 DATABASE = os.path.join(current_directory, 'posts.db')
 
+
+secret_key = secrets.token_hex(32)
+post_counts_lock = threading.Lock()
+app = Flask(__name__, static_url_path='/static')
+app.secret_key = secret_key
+
+app.config['SESSION_COOKIE_SECURE'] = True
+csrf = CSRFProtect(app)
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+class MyForm(FlaskForm):
+    message = StringField('Message')
+    submit = SubmitField('Submit')
+ENLARGE_FACTOR = 40
+MAX_CHAR = 500
+IMAGE_GEN_TIME = 60
+POSTS_PER_PAGE = 5  # 20
+MAX_PARENT_POSTS = 5 #400
+POST_LIMIT_DURATION = timedelta(minutes=1)
+USER_POSTS_PER_MIN = 3  # 2 or 3
+MAX_REPLIES = 1 #100
+YOUR_THRESHOLD = 0.5
+post_counter = 1
+MAX_REPEATING_CHARACTERS = 10
+message_board = []
+post_counts = {}
+
+
+logging.basicConfig(level=logging.DEBUG)
+
 with sqlite3.connect(DATABASE) as connection:
     cursor = connection.cursor()
     cursor.execute('''
@@ -83,34 +112,6 @@ def get_db():
         db.row_factory = sqlite3.Row
     return db
 
-
-secret_key = secrets.token_hex(32)
-post_counts_lock = threading.Lock()
-app = Flask(__name__, static_url_path='/static')
-app.secret_key = secret_key
-
-app.config['SESSION_COOKIE_SECURE'] = True
-csrf = CSRFProtect(app)
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
-class MyForm(FlaskForm):
-    message = StringField('Message')
-    submit = SubmitField('Submit')
-ENLARGE_FACTOR = 40
-MAX_CHAR = 500
-IMAGE_GEN_TIME = 60
-POSTS_PER_PAGE = 20  # 20
-MAX_PARENT_POSTS = 400
-POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 3  # 2 or 3
-MAX_REPLIES = 100
-YOUR_THRESHOLD = 0.5
-post_counter = 1
-MAX_REPEATING_CHARACTERS = 10
-message_board = []
-post_counts = {}
-
-
-logging.basicConfig(level=logging.DEBUG)
 
 
 def has_too_many_repeating_characters(message):
