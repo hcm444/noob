@@ -405,6 +405,8 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
+    print("Initializing the database...")
     init_db()
+    print("Database initialization complete.")
     app.run(debug=True)
 
