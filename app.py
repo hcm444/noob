@@ -249,7 +249,6 @@ def post():
                 'timestamp': timestamp,
                 'message': message,
             }
-            post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
             message_board.remove(parent_post)
             message_board.append(parent_post)
