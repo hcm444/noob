@@ -16,11 +16,15 @@ from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
+import secrets
 
+secret_key = secrets.token_hex(32)
+print(secret_key)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
-app.secret_key = 'your_secret_key'  # Replace with a secure secret key
+app.secret_key = secret_key
 
+app.config['SESSION_COOKIE_SECURE'] = True
 csrf = CSRFProtect(app)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 class MyForm(FlaskForm):
@@ -417,4 +421,5 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
+
