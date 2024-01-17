@@ -27,6 +27,19 @@ current_directory = os.path.abspath(os.path.dirname(__file__))
 # Use the absolute path to create the DATABASE path
 DATABASE = os.path.join(current_directory, 'posts.db')
 
+# Create the 'posts' table if it doesn't exist
+with sqlite3.connect(DATABASE) as connection:
+    cursor = connection.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_number INTEGER,
+            timestamp DATETIME,
+            message TEXT,
+            parent_post_number INTEGER
+        )
+    ''')
+
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
