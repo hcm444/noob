@@ -162,8 +162,6 @@ def post():
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
 
-
-
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
         session['error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
@@ -180,6 +178,7 @@ def post():
     if message.strip() == '>>':
         session['error_message'] = 'Posting ">>" by itself is not allowed.'
         return redirect(url_for('home'))
+
     with post_counts_lock:
         ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
     if ip_address in post_counts:
@@ -217,12 +216,13 @@ def post():
                 return True
         return False
 
+    parent_post_number = None
+
     if references:
         parent_post_number = references[0]
         parent_post = find_parent_post(parent_post_number)
 
         if parent_post:
-
             if message_exists_in_post(parent_post, message):
                 session['error_message'] = 'This message already exists as a reply to the referenced post.'
                 return redirect(url_for('home'))
@@ -260,8 +260,6 @@ def post():
             delete_oldest_parent_post()
 
     try:
-    
-        
         db = get_db()
         cur = db.cursor()
         cur.execute("INSERT INTO posts (post_number, timestamp, message, parent_post_number) VALUES (?, ?, ?, ?)",
@@ -271,10 +269,10 @@ def post():
         print(f"Error saving post to the database: {e}")
         # Log the error if you have logging configured
         app.logger.error(f"Error saving post to the database: {e}")
-    
-        session['error_message'] = 'Post successfully created.'
-        print(message_board)
-        return redirect(url_for('home'))
+
+    session['error_message'] = 'Post successfully created.'
+    print(message_board)
+    return redirect(url_for('home'))
 
 @app.route('/about')
 def about():
