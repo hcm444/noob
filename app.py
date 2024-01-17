@@ -31,10 +31,12 @@ def get_db():
     return db
 
 def init_db():
+    print("Initializing the database...")
     with app.app_context():
-        db = get_db()
         with app.open_resource('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
+            schema_contents = f.read()
+            print(f"Schema Contents:\n{schema_contents}")
+            db.cursor().executescript(schema_contents)
         db.commit()
 
 secret_key = secrets.token_hex(32)
