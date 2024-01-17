@@ -267,7 +267,7 @@ def post():
             'message': message,
             'replies': [],
         }
-        post_counter += 1
+
         message_board.append(post)
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
@@ -284,7 +284,9 @@ def post():
         app.logger.error(f"Error saving post to the database: {e}")
 
     session['error_message'] = 'Post successfully created.'
+    
     print(message_board)
+    post_counter += 1
     return redirect(url_for('home'))
 
 @app.route('/about')
