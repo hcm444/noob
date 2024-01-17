@@ -241,6 +241,12 @@ def post():
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
 
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("INSERT INTO posts (post_number, timestamp, message, parent_post_number) VALUES (?, ?, ?, ?)",
+                (post_counter, timestamp, message, parent_post_number))
+    db.commit()
+
     session['error_message'] = 'Post successfully created.'
     print(message_board)
     return redirect(url_for('home'))
