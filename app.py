@@ -27,6 +27,31 @@ current_directory = os.path.abspath(os.path.dirname(__file__))
 # Use the absolute path to create the DATABASE path
 DATABASE = os.path.join(current_directory, 'posts.db')
 
+def load_posts_from_database():
+    global message_board
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM posts")
+        rows = cursor.fetchall()
+
+        # Clear existing message_board
+        message_board = []
+
+        for row in rows:
+            post = {
+                'post_number': row['post_number'],
+                'timestamp': row['timestamp'],
+                'message': row['message'],
+                'parent_post_number': row['parent_post_number'],
+                'replies': []  # You might need to adjust this based on your database structure
+            }
+            message_board.append(post)
+
+    except Exception as e:
+        print(f"Error loading posts from the database: {e}")
+        app.logger.error(f"Error loading posts from the database: {e}")
+
 # Create the 'posts' table if it doesn't exist
 with sqlite3.connect(DATABASE) as connection:
     cursor = connection.cursor()
@@ -419,5 +444,10 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
+    load_posts_from_database()
+
+    # Start the image generation thread
+    image_generation_thread = threading.Thread(target=generate_message_board_image)
+    image_generation_thread.start()
     app.run(debug=True)
 
