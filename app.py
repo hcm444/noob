@@ -307,21 +307,25 @@ def post():
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
 
-    try:
-        db = get_db()
-        cur = db.cursor()
-        cur.execute("INSERT INTO posts (post_number, timestamp, message, parent_post_number) VALUES (?, ?, ?, ?)",
-                    (post_counter, timestamp, message, parent_post_number))
-        db.commit()
+   try:
+    db = get_db()
+    cur = db.cursor()
+    cur.execute("INSERT INTO posts (post_number, timestamp, message, parent_post_number) VALUES (?, ?, ?, ?)",
+                (post_counter, timestamp, message, parent_post_number))
+    db.commit()
     except Exception as e:
         print(f"Error saving post to the database: {e}")
         # Log the error if you have logging configured
         app.logger.error(f"Error saving post to the database: {e}")
-
-    session['error_message'] = 'Post successfully created.'
     
+    session['error_message'] = 'Post successfully created.'
+        
     print(message_board)
     post_counter += 1
+    
+    # Reload posts from the database after adding a new post
+    load_posts_from_database()
+    
     return redirect(url_for('home'))
 
 @app.route('/about')
