@@ -10,6 +10,7 @@ import csv
 import logging
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
+import os
 
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
@@ -29,6 +30,12 @@ cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 class MyForm(FlaskForm):
     message = StringField('Message')
     submit = SubmitField('Submit')
+
+# Initialize post_counter from a file or default to 1
+MAX_POST_FILE = 'max_post_number.txt'
+post_counter = int(open(MAX_POST_FILE).read().strip()) if os.path.exists(MAX_POST_FILE) else 1
+
+
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
@@ -237,6 +244,9 @@ def post():
             'replies': [],
         }
         post_counter += 1
+        # Save the new post counter to the file
+        with open(MAX_POST_FILE, 'w') as max_post_file:
+            max_post_file.write(str(post_counter))
         message_board.append(post)
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
