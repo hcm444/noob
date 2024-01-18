@@ -68,6 +68,18 @@ with sqlite3.connect(DATABASE) as connection:
         )
     ''')
 
+def save_post_to_database(post):
+    try:
+        db = get_db()
+        cur = db.cursor()
+        cur.execute("INSERT INTO posts (post_number, timestamp, message, parent_post_number) VALUES (?, ?, ?, ?)",
+                    (post['post_number'], post['timestamp'], post['message'], post['parent_post_number']))
+        db.commit()
+    except Exception as e:
+        print(f"Error saving post to the database: {e}")
+        # Log the error if you have logging configured
+        app.logger.error(f"Error saving post to the database: {e}")
+
 def load_posts_from_database():
     global message_board, post_counter
     try:
@@ -321,6 +333,7 @@ def post():
     session['error_message'] = 'Post successfully created.'
     
     print(message_board)
+    save_post_to_database(post)
     post_counter += 1
     # Reload posts from the database after adding a new post
     return redirect(url_for('home'))
