@@ -7,7 +7,6 @@ import threading
 import colorsys
 import time
 import csv
-import os
 import logging
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
@@ -18,15 +17,6 @@ from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
-import sqlite3
-from flask import g
-
-# Get the absolute path to the current directory
-current_directory = os.path.abspath(os.path.dirname(__file__))
-
-# Use the absolute path to create the DATABASE path
-DATABASE = os.path.join(current_directory, 'posts.db')
-
 
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
@@ -43,10 +33,10 @@ ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
 POSTS_PER_PAGE = 20  # 20
-MAX_PARENT_POSTS = 400 #400
+MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
 USER_POSTS_PER_MIN = 3  # 2 or 3
-MAX_REPLIES = 100 #100
+MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 post_counter = 1
 MAX_REPEATING_CHARACTERS = 10
@@ -55,63 +45,6 @@ post_counts = {}
 
 
 logging.basicConfig(level=logging.DEBUG)
-
-with sqlite3.connect(DATABASE) as connection:
-    cursor = connection.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS posts (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            post_number INTEGER,
-            timestamp DATETIME,
-            message TEXT,
-            parent_post_number INTEGER
-        )
-    ''')
-
-def load_posts_from_database():
-    global message_board, post_counter
-    try:
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM posts")
-        rows = cursor.fetchall()
-
-        # Clear existing message_board
-        message_board = []
-
-        for row in rows:
-            post = {
-                'post_number': row['post_number'],
-                'timestamp': row['timestamp'],
-                'message': row['message'],
-                'parent_post_number': row['parent_post_number'],
-                'replies': []  # You might need to adjust this based on your database structure
-            }
-            message_board.append(post)
-
-        print("Posts loaded from the database:", message_board)
-
-        # Find the maximum post_number from the loaded posts
-        max_post_number_db = max([post['post_number'] for post in message_board], default=0)
-
-        # Set post_counter to start from the greater of the two maximum post numbers
-        post_counter = max(max_post_number_db, post_counter) + 1
-
-    except Exception as e:
-        print(f"Error loading posts from the database: {e}")
-        app.logger.error(f"Error loading posts from the database: {e}")
-
-
-
-
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        print("Creating a new database connection...")
-        db = g._database = sqlite3.connect(DATABASE)
-        db.row_factory = sqlite3.Row
-    return db
-
 
 
 def has_too_many_repeating_characters(message):
@@ -211,6 +144,8 @@ def post():
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
 
+
+
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
         session['error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
@@ -227,7 +162,6 @@ def post():
     if message.strip() == '>>':
         session['error_message'] = 'Posting ">>" by itself is not allowed.'
         return redirect(url_for('home'))
-
     with post_counts_lock:
         ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
     if ip_address in post_counts:
@@ -265,13 +199,12 @@ def post():
                 return True
         return False
 
-    parent_post_number = None
-
     if references:
         parent_post_number = references[0]
         parent_post = find_parent_post(parent_post_number)
 
         if parent_post:
+
             if message_exists_in_post(parent_post, message):
                 session['error_message'] = 'This message already exists as a reply to the referenced post.'
                 return redirect(url_for('home'))
@@ -285,6 +218,7 @@ def post():
                 'timestamp': timestamp,
                 'message': message,
             }
+            post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
             message_board.remove(parent_post)
             message_board.append(parent_post)
@@ -302,27 +236,13 @@ def post():
             'message': message,
             'replies': [],
         }
-
+        post_counter += 1
         message_board.append(post)
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
 
-    try:
-        db = get_db()
-        cur = db.cursor()
-        cur.execute("INSERT INTO posts (post_number, timestamp, message, parent_post_number) VALUES (?, ?, ?, ?)",
-                    (post_counter, timestamp, message, parent_post_number))
-        db.commit()
-    except Exception as e:
-        print(f"Error saving post to the database: {e}")
-        # Log the error if you have logging configured
-        app.logger.error(f"Error saving post to the database: {e}")
-
     session['error_message'] = 'Post successfully created.'
-    
     print(message_board)
-    post_counter += 1
-    # Reload posts from the database after adding a new post
     return redirect(url_for('home'))
 
 @app.route('/about')
@@ -451,14 +371,9 @@ def generate_message_board_image():
 
         time.sleep(IMAGE_GEN_TIME)
 
+
+image_generation_thread = threading.Thread(target=generate_message_board_image)
+image_generation_thread.start()
+
 if __name__ == '__main__':
-    with app.app_context():
-        # Load posts from the database during initialization
-        load_posts_from_database()
-
-    # Start the image generation thread
-    image_generation_thread = threading.Thread(target=generate_message_board_image)
-    image_generation_thread.start()
-
-    # Run the Flask application
-    app.run(debug=True)
+    app.run(debug=False)
