@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw, ImageFont
 import threading
 import colorsys
 import time
-import csv
+
 import logging
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
@@ -364,11 +364,6 @@ def generate_message_board_image():
 
         enlarged_image.save('static/enlarged_message_board_image.png')
 
-        with open('static/message_board_data.csv', 'w', newline='') as csvfile:
-            csv_writer = csv.writer(csvfile)
-            for i in range(0, len(csv_data), 10):
-                row_data = csv_data[i:i + 10]
-                csv_writer.writerow(row_data)
 
         time.sleep(IMAGE_GEN_TIME)
 
