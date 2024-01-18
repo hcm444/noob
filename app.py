@@ -323,7 +323,6 @@ def post():
     print(message_board)
     post_counter += 1
     # Reload posts from the database after adding a new post
-    load_posts_from_database()
     return redirect(url_for('home'))
 
 @app.route('/about')
