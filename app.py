@@ -456,9 +456,9 @@ if __name__ == '__main__':
         # Load posts from the database during initialization
         load_posts_from_database()
 
-        # Start the image generation thread
-        image_generation_thread = threading.Thread(target=generate_message_board_image)
-        image_generation_thread.start()
+    # Start the image generation thread
+    image_generation_thread = threading.Thread(target=generate_message_board_image)
+    image_generation_thread.start()
 
-        # Run the Flask application
-        app.run(debug=True)
+    # Run the Flask application
+    app.run(debug=True)
