@@ -101,9 +101,6 @@ def load_posts_from_database():
         print(f"Error loading posts from the database: {e}")
         app.logger.error(f"Error loading posts from the database: {e}")
 
-# Load posts from the database during initialization
-load_posts_from_database()
-
 
 
 
