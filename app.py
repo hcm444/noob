@@ -1,4 +1,3 @@
-import sqlite3
 from datetime import datetime, timedelta
 import re
 
@@ -12,7 +11,7 @@ import logging
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
 import os
-from threading import Lock
+
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFProtect
@@ -21,8 +20,7 @@ from wtforms import StringField, SubmitField
 import secrets
 
 secret_key = secrets.token_hex(32)
-ip = threading.Lock()
-post_counter_lock = Lock()
+post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = secret_key
 
@@ -33,53 +31,29 @@ class MyForm(FlaskForm):
     message = StringField('Message')
     submit = SubmitField('Submit')
 
+# Initialize post_counter from a file or default to 1
+MAX_POST_FILE = 'max_post_number.txt'
+post_counter = int(open(MAX_POST_FILE).read().strip()) if os.path.exists(MAX_POST_FILE) else 1
 
 
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
-POSTS_PER_PAGE = 5  # 20
-MAX_PARENT_POSTS = 5 #400
+POSTS_PER_PAGE = 20  # 20
+MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 30  # 2 or 3
-MAX_REPLIES = 5 #100
+USER_POSTS_PER_MIN = 3  # 2 or 3
+MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
-
+post_counter = 1
 MAX_REPEATING_CHARACTERS = 10
 message_board = []
 post_counts = {}
 
 
 logging.basicConfig(level=logging.DEBUG)
-# Initialize post_counter from the database or default to 1
-DATABASE_FILE = 'post_counter.db'
 
-conn = sqlite3.connect(DATABASE_FILE)
-cursor = conn.cursor()
 
-cursor.execute('''
-    CREATE TABLE IF NOT EXISTS post_counter (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        post_count INTEGER,
-        message TEXT,
-        timestamp DATETIME
-    )
-''')
-
-cursor.execute('SELECT post_count, message, timestamp FROM post_counter ORDER BY id DESC LIMIT 1')
-result = cursor.fetchone()
-
-if result:
-    post_counter, last_message, last_timestamp = result
-else:
-    post_counter = 1
-    last_message = None
-    last_timestamp = None
-    cursor.execute('INSERT INTO post_counter (post_count, message, timestamp) VALUES (?, ?, ?)',
-                   (post_counter, last_message, last_timestamp))
-    conn.commit()
-
-conn.close()
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
     return bool(repeating_pattern.search(message))
@@ -192,7 +166,7 @@ def post():
         session['error_message'] = 'Posting ">>" by itself is not allowed.'
         return redirect(url_for('home'))
 
-    with ip:
+    with post_counts_lock:
         ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
 
     if ip_address in post_counts:
@@ -211,7 +185,6 @@ def post():
         post_counts[ip_address] = (1, datetime.now())
 
     timestamp = datetime.now()
-
     references = parse_references(message)
 
     def find_parent_post(referenced_post_number):
@@ -249,6 +222,7 @@ def post():
                 'timestamp': timestamp,
                 'message': message,
             }
+            post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
             message_board.remove(parent_post)
             message_board.append(parent_post)
@@ -259,27 +233,18 @@ def post():
         if any(message_exists_in_post(post, message) for post in message_board):
             session['error_message'] = 'This message already exists as a parent post or a reply.'
             return redirect(url_for('home'))
-
-        with post_counter_lock:
-            post_counter += 1
-            conn = sqlite3.connect(DATABASE_FILE)
-            cursor = conn.cursor()
-            cursor.execute('INSERT INTO post_counter (post_count, timestamp, message) VALUES (?, ?, ?)',
-                           (post_counter, timestamp, message))
-            conn.commit()
-
-            post = {
-                'post_number': post_counter,
-                'timestamp': timestamp,
-                'message': message,
-                'replies': [],
-            }
-
-            message_board.append(post)
-
-            if len(message_board) > MAX_PARENT_POSTS:
-                delete_oldest_parent_post()
-
+        post_counter += 1
+        post = {
+            'post_number': post_counter,
+            'timestamp': timestamp,
+            'message': message,
+            'replies': [],
+        }
+        message_board.append(post)
+        if len(message_board) > MAX_PARENT_POSTS:
+            delete_oldest_parent_post()
+        with open(MAX_POST_FILE, 'w') as max_post_file:
+            max_post_file.write(str(post_counter))
 
     session['error_message'] = 'Post successfully created.'
     return redirect(url_for('home'))
