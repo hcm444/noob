@@ -9,8 +9,9 @@ import colorsys
 import time
 import csv
 import logging
-from flask import  jsonify, session, redirect, url_for
-
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+from difflib import SequenceMatcher
+import os
 from threading import Lock
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
@@ -37,11 +38,11 @@ class MyForm(FlaskForm):
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
-POSTS_PER_PAGE = 20  # 20
-MAX_PARENT_POSTS = 400 #400
+POSTS_PER_PAGE = 5  # 20
+MAX_PARENT_POSTS = 5 #400
 POST_LIMIT_DURATION = timedelta(minutes=1)
-USER_POSTS_PER_MIN = 3  # 2 or 3
-MAX_REPLIES = 100 #100
+USER_POSTS_PER_MIN = 30  # 2 or 3
+MAX_REPLIES = 5 #100
 YOUR_THRESHOLD = 0.5
 
 MAX_REPEATING_CHARACTERS = 10
@@ -71,13 +72,7 @@ result = cursor.fetchone()
 if result:
     post_counter, last_message, last_timestamp = result
 else:
-    # Fetch the maximum post number from the database
-    cursor.execute('SELECT MAX(post_count) FROM post_counter')
-    max_post_number = cursor.fetchone()[0]
-
-    # Use the maximum post number to initialize post_counter
-    post_counter = max_post_number + 1 if max_post_number is not None else 1
-
+    post_counter = 0
     last_message = None
     last_timestamp = None
     cursor.execute('INSERT INTO post_counter (post_count, message, timestamp) VALUES (?, ?, ?)',
