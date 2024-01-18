@@ -361,6 +361,7 @@ def generate_message_board_image():
 
         initial_image.save('static/message_board_image.png')
 
+
         enlarged_image.save('static/enlarged_message_board_image.png')
 
         with open('static/message_board_data.csv', 'w', newline='') as csvfile:
