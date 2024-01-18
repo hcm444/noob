@@ -17,7 +17,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
-
+import sqlite3
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
@@ -46,19 +46,45 @@ post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
-POST_COUNT_FILE = 'post_count.txt'
-
 def load_highest_post_count():
     try:
-        with open(POST_COUNT_FILE, 'r') as file:
-            return int(file.read())
-    except FileNotFoundError:
-        return 1  # Default value if the file doesn't exist
+        connection = sqlite3.connect('post_count.db')  # Change the database name as needed
+        cursor = connection.cursor()
+        cursor.execute('CREATE TABLE IF NOT EXISTS post_count (count INTEGER)')
+        cursor.execute('SELECT * FROM post_count')
+        result = cursor.fetchone()
+        return result[0] if result else 1  # Default value if no record is found
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
+        return 1  # Default value if an error occurs
+    finally:
+        connection.close()
 
 post_counter = load_highest_post_count()
+
+
 def save_highest_post_count(post_count):
-    with open(POST_COUNT_FILE, 'w') as file:
-        file.write(str(post_count))
+    try:
+        connection = sqlite3.connect('post_count.db')
+        cursor = connection.cursor()
+        cursor.execute('CREATE TABLE IF NOT EXISTS post_count (count INTEGER)')
+
+        # Check if a record exists
+        cursor.execute('SELECT * FROM post_count')
+        result = cursor.fetchone()
+
+        if result:
+            # Update the existing record
+            cursor.execute('UPDATE post_count SET count = ?', (post_count,))
+        else:
+            # Insert a new record
+            cursor.execute('INSERT INTO post_count (count) VALUES (?)', (post_count,))
+
+        connection.commit()
+    except sqlite3.Error as e:
+        print(f"SQLite error: {e}")
+    finally:
+        connection.close()
 
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
