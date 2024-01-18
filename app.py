@@ -38,7 +38,7 @@ POST_LIMIT_DURATION = timedelta(minutes=1)
 USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
-post_counter = 1
+
 MAX_REPEATING_CHARACTERS = 10
 message_board = []
 post_counts = {}
@@ -46,6 +46,19 @@ post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
+POST_COUNT_FILE = 'post_count.txt'
+
+def load_highest_post_count():
+    try:
+        with open(POST_COUNT_FILE, 'r') as file:
+            return int(file.read())
+    except FileNotFoundError:
+        return 1  # Default value if the file doesn't exist
+
+post_counter = load_highest_post_count()
+def save_highest_post_count(post_count):
+    with open(POST_COUNT_FILE, 'w') as file:
+        file.write(str(post_count))
 
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
@@ -243,6 +256,7 @@ def post():
 
     session['error_message'] = 'Post successfully created.'
     print(message_board)
+    save_highest_post_count(post_counter)
     return redirect(url_for('home'))
 
 @app.route('/about')
