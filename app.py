@@ -143,7 +143,6 @@ def post():
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
 
-    # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
 
@@ -151,9 +150,6 @@ def post():
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
 
-
-
-    # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
         session['error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
         return redirect(url_for('home'))
@@ -169,8 +165,10 @@ def post():
     if message.strip() == '>>':
         session['error_message'] = 'Posting ">>" by itself is not allowed.'
         return redirect(url_for('home'))
+
     with post_counts_lock:
         ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
+
     if ip_address in post_counts:
         count, timestamp = post_counts[ip_address]
         time_diff = datetime.now() - timestamp
@@ -211,7 +209,6 @@ def post():
         parent_post = find_parent_post(parent_post_number)
 
         if parent_post:
-
             if message_exists_in_post(parent_post, message):
                 session['error_message'] = 'This message already exists as a reply to the referenced post.'
                 return redirect(url_for('home'))
@@ -244,7 +241,6 @@ def post():
             'replies': [],
         }
         post_counter += 1
-        # Save the new post counter to the file
         with open(MAX_POST_FILE, 'w') as max_post_file:
             max_post_file.write(str(post_counter))
         message_board.append(post)
@@ -252,8 +248,8 @@ def post():
             delete_oldest_parent_post()
 
     session['error_message'] = 'Post successfully created.'
-    print(message_board)
     return redirect(url_for('home'))
+
 
 @app.route('/about')
 def about():
