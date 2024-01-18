@@ -233,19 +233,18 @@ def post():
         if any(message_exists_in_post(post, message) for post in message_board):
             session['error_message'] = 'This message already exists as a parent post or a reply.'
             return redirect(url_for('home'))
-
+        post_counter += 1
         post = {
             'post_number': post_counter,
             'timestamp': timestamp,
             'message': message,
             'replies': [],
         }
-        post_counter += 1
-        with open(MAX_POST_FILE, 'w') as max_post_file:
-            max_post_file.write(str(post_counter))
         message_board.append(post)
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
+        with open(MAX_POST_FILE, 'w') as max_post_file:
+            max_post_file.write(str(post_counter))
 
     session['error_message'] = 'Post successfully created.'
     return redirect(url_for('home'))
