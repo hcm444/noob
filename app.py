@@ -10,7 +10,7 @@ import csv
 import logging
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
-
+import sqlite3
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFProtect
@@ -46,6 +46,27 @@ post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
+db_connection = sqlite3.connect('post_numbers.db')
+cursor = db_connection.cursor()
+
+# Create a table if it doesn't exist
+cursor.execute('''
+    CREATE TABLE IF NOT EXISTS post_numbers (
+        id INTEGER PRIMARY KEY,
+        saved_post_counter INTEGER
+    )
+''')
+
+# Retrieve the latest saved post counter value
+cursor.execute('SELECT saved_post_counter FROM post_numbers ORDER BY id DESC LIMIT 1')
+result = cursor.fetchone()
+saved_post_counter = result[0] if result else 1
+
+# Close the database connection
+db_connection.close()
+
+# Initialize post_counter with the retrieved value
+post_counter = saved_post_counter
 
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
@@ -218,7 +239,8 @@ def post():
                 'timestamp': timestamp,
                 'message': message,
             }
-            post_counter += 1
+            post_counter = saved_post_counter
+
             parent_post.setdefault('replies', []).append(reply)
             message_board.remove(parent_post)
             message_board.append(parent_post)
@@ -236,7 +258,16 @@ def post():
             'message': message,
             'replies': [],
         }
-        post_counter += 1
+        with post_counts_lock:
+            # Increment post counter
+            post_counter += 1
+
+            # Update the database with the new saved post counter value
+            db_connection = sqlite3.connect('post_numbers.db')
+            cursor = db_connection.cursor()
+            cursor.execute('INSERT INTO post_numbers (saved_post_counter) VALUES (?)', (post_counter,))
+            db_connection.commit()
+            db_connection.close()
         message_board.append(post)
         if len(message_board) > MAX_PARENT_POSTS:
             delete_oldest_parent_post()
