@@ -72,7 +72,7 @@ result = cursor.fetchone()
 if result:
     post_counter, last_message, last_timestamp = result
 else:
-    post_counter = 0
+    post_counter = 1
     last_message = None
     last_timestamp = None
     cursor.execute('INSERT INTO post_counter (post_count, message, timestamp) VALUES (?, ?, ?)',
