@@ -6,7 +6,7 @@
     <style>
         body {
             background-color: #000;
-            color: #00FF00; /* Green text */
+            color: #00FF00;
             font-family: Arial, sans-serif;
             margin: 20px;
         }
@@ -17,10 +17,10 @@
 
         .toggle-replies-button {
             display: inline-block;
-            background-color: #000; /* Green button color */
-            color: #00FF00; /* Black text */
-            padding: 5px 10px; /* Adjust padding as needed */
-            margin-right: 5px; /* Adjust margin as needed */
+            background-color: #000;
+            color: #00FF00;
+            padding: 5px 10px;
+            margin-right: 5px;
             text-decoration: none;
             border: none;
         }
@@ -29,19 +29,20 @@
             list-style: none;
             padding: 0;
             display: grid;
-            grid-template-columns: repeat(8, 1fr); /* Adjust the number of columns as needed */
-            grid-auto-rows: 1fr; /* Make the rows equally sized */
+            grid-template-columns: repeat(8, 1fr);
+            grid-auto-rows: 1fr;
         }
 
         li {
-            border: 1px solid #00FF00; /* Green border */
+            border: 1px solid #00FF00;
             padding: 10px;
             margin: 10px;
-            background-color: #000; /* Dark background */
+            background-color: #000;
+            width: 160px; /* Adjust the width as needed */
         }
 
         a {
-            color: #00FF00; /* Green link color */
+            color: #00FF00;
             text-decoration: none;
         }
 
@@ -53,13 +54,13 @@
             display: -webkit-box;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
+            word-wrap: break-word;
             overflow: hidden;
-            max-width: 180px;
+            max-width: 200px; /* Adjust the max-width as needed */
         }
 
-        /* Style for deleted posts */
         .post-deleted {
-            color: #FF0000; /* Red text for deleted posts */
+            color: #FF0000;
         }
     </style>
 </head>
@@ -68,7 +69,7 @@
         {% for post in catalog_data %}
             <li>
                 <a href="/thread/{{ post.post_number }}">
-                    #{{ post.post_number }} | {{ post.total_replies }} | {{ post.timestamp }} |
+                    #{{ post.post_number }} | {{ post.total_replies }} | {{ post.timestamp }}
 
                     {% if post.message == '########## POST DELETED ##########' %}
                         <span class="teaser post-deleted">{{ post.message }}</span>
