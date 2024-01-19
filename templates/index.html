@@ -125,7 +125,7 @@
 
         <p><strong>#{{ message.post_number }} | {{ message.timestamp }}</strong></p>
 
-        {% if "POST DELETED" in message.message %}
+        {% if "########## POST DELETED ##########" in message.message %}
             <p style="color: #FF0000;">{{ message.message }}</p>
         {% else %}
             <p>{{ message.message }}</p>
@@ -141,7 +141,7 @@
                     <div class="message" style="margin-left: 40px;">
                         <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }}</strong></p>
 
-                        {% if "POST DELETED" in reply.message %}
+                        {% if "########## POST DELETED ##########" in reply.message %}
                             <p style="color: #FF0000;">{{ reply.message }}</p>
                         {% else %}
                             <p>{{ reply.message }}</p>
@@ -154,7 +154,7 @@
                                     <div class="message" style="margin-left: 80px;">
                                         <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }}</strong></p>
 
-                                        {% if "POST DELETED" in sub_reply.message %}
+                                        {% if "########## POST DELETED ##########" in sub_reply.message %}
                                             <p style="color: #FF0000;">{{ sub_reply.message }}</p>
                                         {% else %}
                                             <p>{{ sub_reply.message }}</p>

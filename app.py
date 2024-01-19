@@ -62,7 +62,7 @@ USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 
-MAX_REPEATING_CHARACTERS = 10
+MAX_REPEATING_CHARACTERS = 9
 message_board = []
 post_counts = {}
 
@@ -150,7 +150,7 @@ def replace_characters():
 
     if post_to_replace:
         # Replace all characters in the message with "#"
-        post_to_replace['message'] = 'POST DELETED'
+        post_to_replace['message'] = '########## POST DELETED ##########'
 
         # Optionally, you may want to update the timestamp or perform other actions
 
