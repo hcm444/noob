@@ -513,4 +513,4 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
