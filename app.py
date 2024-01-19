@@ -10,6 +10,8 @@ import time
 import logging
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 from difflib import SequenceMatcher
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from wtforms.fields.simple import PasswordField
 
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
@@ -18,6 +20,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
 import sqlite3
+
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
@@ -26,9 +29,29 @@ app.secret_key = secret_key
 app.config['SESSION_COOKIE_SECURE'] = True
 csrf = CSRFProtect(app)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
-class MyForm(FlaskForm):
-    message = StringField('Message')
-    submit = SubmitField('Submit')
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+
+# Mockup of user class (replace it with your user management logic)
+class User(UserMixin):
+    pass
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    user = User()
+    user.id = user_id
+    return user
+
+
+class MyLoginForm(FlaskForm):
+    username = StringField('Username')
+    password = PasswordField('Password')
+    submit = SubmitField('Login')
+
+
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
@@ -43,8 +66,8 @@ MAX_REPEATING_CHARACTERS = 10
 message_board = []
 post_counts = {}
 
-
 logging.basicConfig(level=logging.DEBUG)
+
 
 def load_highest_post_count():
     try:
@@ -59,6 +82,7 @@ def load_highest_post_count():
         return 1  # Default value if an error occurs
     finally:
         connection.close()
+
 
 post_counter = load_highest_post_count()
 
@@ -86,6 +110,7 @@ def save_highest_post_count(post_count):
     finally:
         connection.close()
 
+
 def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
     return bool(repeating_pattern.search(message))
@@ -108,6 +133,80 @@ def parse_references(message):
         referenced_post_number = int(match.group(1))
         references.append(referenced_post_number)
     return references
+
+
+@app.route('/replace_characters', methods=['POST'])
+@login_required
+def replace_characters():
+    post_number = request.form.get('post_number')
+
+    try:
+        post_number = int(post_number)
+    except ValueError:
+        return "Invalid post number. Please enter a valid post number."
+
+    # Find the post with the specified post number, including replies
+    post_to_replace = find_post_by_number(message_board, post_number)
+
+    if post_to_replace:
+        # Replace all characters in the message with "#"
+        post_to_replace['message'] = 'POST DELETED'
+
+        # Optionally, you may want to update the timestamp or perform other actions
+
+        return "Characters replaced successfully."
+    else:
+        return "Post not found. Please enter a valid post number."
+
+
+def find_post_by_number(posts, post_number):
+    for post in posts:
+        if post['post_number'] == post_number:
+            return post
+        elif 'replies' in post:
+            # Search for the post in replies recursively
+            nested_post = find_post_by_number(post['replies'], post_number)
+            if nested_post:
+                return nested_post
+    return None
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = MyLoginForm()  # Create an instance of the login form
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Replace this with your actual authentication logic
+        if username == 'admin' and password == 'B0r3alB0r3al!':
+            user = User()
+            user.id = username
+            login_user(user)
+            return redirect(url_for('admin_dashboard'))
+
+        session['error_message'] = 'Invalid username or password'
+        return redirect(url_for('login'))
+
+    return render_template('login.html', form=form)  # Pass the form to the template
+
+
+# Admin dashboard route
+
+@app.route('/admin_dashboard')
+@login_required
+def admin_dashboard():
+    form = MyLoginForm()  # Instantiate the form
+    return render_template('admin_dashboard.html', username=current_user.id, form=form)
+
+
+# Logout route
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
 
 
 @app.route('/catalog')
@@ -163,10 +262,12 @@ def home():
 
     # Pass both messages and captcha information to the template
     return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page,
-                           captcha_image=captcha_image, form=MyForm(), error_message=session.pop('error_message', None))
+                           captcha_image=captcha_image, form=MyLoginForm(),
+                           error_message=session.pop('error_message', None))
 
 
 ip_post_counts = {}
+
 
 @app.route('/post', methods=['POST'])
 def post():
@@ -183,11 +284,10 @@ def post():
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
 
-
-
     # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
-        session['error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
+        session[
+            'error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
         return redirect(url_for('home'))
 
     if not message or message.isspace():
@@ -211,7 +311,8 @@ def post():
             post_counts[ip_address] = (1, datetime.now())
         elif count >= USER_POSTS_PER_MIN:
             remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
-            session['error_message'] = f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
+            session[
+                'error_message'] = f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
             return redirect(url_for('home'))
         else:
             post_counts[ip_address] = (count + 1, datetime.now())
@@ -285,9 +386,11 @@ def post():
     save_highest_post_count(post_counter)
     return redirect(url_for('home'))
 
+
 @app.route('/about')
 def about():
     return render_template('about.html')
+
 
 @app.route('/statistics')
 def statistics():
@@ -401,9 +504,7 @@ def generate_message_board_image():
 
         initial_image.save('static/message_board_image.png')
 
-
         enlarged_image.save('static/enlarged_message_board_image.png')
-
 
         time.sleep(IMAGE_GEN_TIME)
 
@@ -412,4 +513,4 @@ image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
