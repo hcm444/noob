@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00FF00; /* Green text */
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h2 {
+            color: #00FF00; /* Green heading text color */
+        }
+
+        label {
+            color: #00FF00; /* Green label text color */
+        }
+
+        input {
+            background-color: #000; /* Dark input background */
+            color: #00FF00; /* Green input text color */
+            border: 1px solid #00FF00; /* Green border */
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        input[type="submit"] {
+            background-color: #000; /* Dark submit button background */
+            color: #00FF00; /* Green submit button text color */
+            border: 1px solid #00FF00; /* Green border */
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #00FF00; /* Green submit button background on hover */
+            color: #000; /* Black submit button text color on hover */
+        }
+
+        a {
+            color: #00FF00; /* Green link color */
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline; /* Underline link on hover */
+        }
+    </style>
+</head>
+<body>
+    <h2>Welcome, {{ username }}!</h2>
+    <p>This is the admin dashboard.</p>
+    <form method="POST" action="/replace_characters">
+        {{ form.csrf_token }}
+        <label for="post_number">Post Number:</label>
+        <input type="text" name="post_number" id="post_number" required>
+        <input type="submit" value="Submit">
+    </form>
+    <a href="{{ url_for('logout') }}">Logout</a>
+</body>
+</html>

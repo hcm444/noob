@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            background-color: #000;
+            color: #00FF00; /* Green text */
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        label {
+            color: #00FF00; /* Green label text color */
+        }
+
+        input {
+            background-color: #000; /* Dark input background */
+            color: #00FF00; /* Green input text color */
+            border: 1px solid #00FF00; /* Green border */
+            padding: 5px;
+            margin-bottom: 10px;
+        }
+
+        button {
+            background-color: #000; /* Dark button background */
+            color: #00FF00; /* Green button text color */
+            border: 1px solid #00FF00; /* Green border */
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #00FF00; /* Green button background on hover */
+            color: #000; /* Black button text color on hover */
+        }
+
+        p.error-message {
+            color: red; /* Red error message text color */
+        }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+    <form method="post" action="{{ url_for('login') }}">
+        {{ form.csrf_token }}
+        <label for="username">Username:</label>
+        {{ form.username }}
+        <br>
+        <label for="password">Password:</label>
+        {{ form.password }}
+        <br>
+        <button type="submit">Login</button>
+    </form>
+    {% if session.get('error_message') %}
+        <p class="error-message">{{ session.pop('error_message') }}</p>
+    {% endif %}
+</body>
+</html>
