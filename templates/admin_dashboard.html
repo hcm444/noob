@@ -3,13 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Noob</title>
     <style>
+        .scrollable-list {
+    max-height: 400px; /* Set the maximum height of the list */
+    overflow-y: auto;  /* Enable vertical scrolling */
+    border: 1px solid #00FF00; /* Add a border for clarity */
+    padding: 10px; /* Add padding for better appearance */
+  }
         body {
             background-color: #000;
             color: #00FF00; /* Green text */
             font-family: Arial, sans-serif;
             margin: 20px;
+        }
+        .toggle-replies-button {
+    display: inline-block;
+    background-color: #000; /* Green button color */
+    color: #00FF00; /* Black text */
+    padding: 5px 10px; /* Adjust padding as needed */
+    margin-right: 5px; /* Adjust margin as needed */
+    text-decoration: underline; /* Underline link on hover */
+    text-decoration: none;
+    border:none;
+}
+.toggle-replies-button:hover {
+            text-decoration: underline; /* Underline link on hover */
         }
 
         h2 {
@@ -52,14 +71,32 @@
     </style>
 </head>
 <body>
-    <h2>Welcome, {{ username }}!</h2>
-    <p>This is the admin dashboard.</p>
+    <h1>{{ username }}</h1>
     <form method="POST" action="/replace_characters">
         {{ form.csrf_token }}
-        <label for="post_number">Post Number:</label>
         <input type="text" name="post_number" id="post_number" required>
-        <input type="submit" value="Submit">
+        <button class="toggle-replies-button" type="Submit"> > </button>
+        <a href="{{ url_for('logout') }}"> L </a>
     </form>
-    <a href="{{ url_for('logout') }}">Logout</a>
+
+<div class="scrollable-list">
+  <ul>
+    {% for post in message_board %}
+      <li>
+        {{ post.post_number }} - {{ post.message }} (IP: {{ post.ip_address }})
+      </li>
+      {% if post.replies %}
+        <ul>
+          {% for reply in post.replies %}
+            <li>
+              {{ reply.post_number }} - {{ reply.message }} (IP: {{ reply.ip_address }})
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endfor %}
+  </ul>
+</div>
+
 </body>
 </html>

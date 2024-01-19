@@ -52,6 +52,13 @@ class MyLoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
+import json
+
+with open('config.json') as f:
+    config = json.load(f)
+
+USERNAME = config.get('username')
+PASSWORD = config.get('password')
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
@@ -180,7 +187,7 @@ def login():
         password = request.form['password']
 
         # Replace this with your actual authentication logic
-        if username == 'admin' and password == 'B0r3alB0r3al!':
+        if username == USERNAME and password == PASSWORD:
             user = User()
             user.id = username
             login_user(user)
@@ -198,7 +205,7 @@ def login():
 @login_required
 def admin_dashboard():
     form = MyLoginForm()  # Instantiate the form
-    return render_template('admin_dashboard.html', username=current_user.id, form=form)
+    return render_template('admin_dashboard.html', username=current_user.id, form=form, message_board=message_board)
 
 
 # Logout route
@@ -269,6 +276,13 @@ def home():
 ip_post_counts = {}
 
 
+def message_exists_in_post(post, message):
+    if post['message'] == message:
+        return True
+    for reply in post.get('replies', []):
+        if message_exists_in_post(reply, message):
+            return True
+    return False
 @app.route('/post', methods=['POST'])
 def post():
     csrf.protect()
@@ -276,7 +290,6 @@ def post():
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
 
-    # Check for similarity with all existing posts
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
 
@@ -284,10 +297,8 @@ def post():
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
 
-    # Check for too many repeating characters
     if has_too_many_repeating_characters(message):
-        session[
-            'error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
+        session['error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
         return redirect(url_for('home'))
 
     if not message or message.isspace():
@@ -301,8 +312,10 @@ def post():
     if message.strip() == '>>':
         session['error_message'] = 'Posting ">>" by itself is not allowed.'
         return redirect(url_for('home'))
+
     with post_counts_lock:
         ip_post_counts[ip_address] = ip_post_counts.get(ip_address, 0) + 1
+
     if ip_address in post_counts:
         count, timestamp = post_counts[ip_address]
         time_diff = datetime.now() - timestamp
@@ -311,8 +324,7 @@ def post():
             post_counts[ip_address] = (1, datetime.now())
         elif count >= USER_POSTS_PER_MIN:
             remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
-            session[
-                'error_message'] = f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
+            session['error_message'] = f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
             return redirect(url_for('home'))
         else:
             post_counts[ip_address] = (count + 1, datetime.now())
@@ -331,20 +343,11 @@ def post():
                     return post
         return None
 
-    def message_exists_in_post(post, message):
-        if post['message'] == message:
-            return True
-        for reply in post.get('replies', []):
-            if message_exists_in_post(reply, message):
-                return True
-        return False
-
     if references:
         parent_post_number = references[0]
         parent_post = find_parent_post(parent_post_number)
 
         if parent_post:
-
             if message_exists_in_post(parent_post, message):
                 session['error_message'] = 'This message already exists as a reply to the referenced post.'
                 return redirect(url_for('home'))
@@ -357,6 +360,7 @@ def post():
                 'post_number': post_counter,
                 'timestamp': timestamp,
                 'message': message,
+                'ip_address': ip_address,
             }
             post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
@@ -375,6 +379,7 @@ def post():
             'timestamp': timestamp,
             'message': message,
             'replies': [],
+            'ip_address': ip_address,
         }
         post_counter += 1
         message_board.append(post)

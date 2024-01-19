@@ -54,20 +54,32 @@
 <body>
     <div class="post-container">
         <p><strong>#{{ post.post_number }} | {{ post.timestamp }}</strong></p>
-        <p>{{ post.message }}</p>
+        {% if "########## POST DELETED ##########" in post.message %}
+                            <p style="color: #FF0000;">{{ post.message }}</p>
+                        {% else %}
+                            <p>{{ post.message }}</p>
+                        {% endif %}
     </div>
 
     <ul>
         {% for reply in post.replies %}
             <li class="message">
                 <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }}</strong></p>
-                <p>{{ reply.message }}</p>
+                {% if "########## POST DELETED ##########" in reply.message %}
+                            <p style="color: #FF0000;">{{ reply.message }}</p>
+                        {% else %}
+                            <p>{{ reply.message }}</p>
+                        {% endif %}
                 {% if reply.replies %}
                     <div class="replies" style="margin-left: 40px;">
                         {% for sub_reply in reply.replies %}
                             <div class="message" style="margin-left: 80px;">
                                 <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }}</strong></p>
-                                <p>{{ sub_reply.message }}</p>
+                                {% if "########## POST DELETED ##########" in sub_reply.message %}
+                            <p style="color: #FF0000;">{{ sub_reply.message }}</p>
+                        {% else %}
+                            <p>{{ sub_reply.message }}</p>
+                        {% endif %}
                             </div>
                         {% endfor %}
                     </div>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
+    <title>Noob</title>
     <style>
         body {
             background-color: #000;
@@ -43,16 +43,15 @@
     </style>
 </head>
 <body>
-    <h2>Login</h2>
     <form method="post" action="{{ url_for('login') }}">
         {{ form.csrf_token }}
-        <label for="username">Username:</label>
+        <label for="username"></label>
         {{ form.username }}
         <br>
-        <label for="password">Password:</label>
+        <label for="password"></label>
         {{ form.password }}
         <br>
-        <button type="submit">Login</button>
+        <button type="submit"> > </button>
     </form>
     {% if session.get('error_message') %}
         <p class="error-message">{{ session.pop('error_message') }}</p>
