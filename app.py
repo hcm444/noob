@@ -208,12 +208,46 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', username=current_user.id, form=form, message_board=message_board)
 
 
+
+
+
 # Logout route
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+restricted_ips = set()
+
+def get_restricted_ips():
+    return list(restricted_ips)
+
+
+@app.route('/ip_restrictions')
+@login_required
+def ip_restrictions():
+    # Call the function to get the restricted IPs
+    restricted_ips_list = get_restricted_ips()
+    return render_template('ip_restrictions.html', ip_restrictions=restricted_ips_list)
+
+
+@app.route('/add_ip_restriction', methods=['POST'])
+@login_required
+def add_ip_restriction():
+    ip_to_restrict = request.form.get('ip_to_restrict')
+    restricted_ips.add(ip_to_restrict)
+    # Optionally, save the updated IP restrictions to a persistent storage
+    return redirect(url_for('ip_restrictions'))
+
+
+@app.route('/remove_ip_restriction', methods=['POST'])
+@login_required
+def remove_ip_restriction():
+    ip_to_remove = request.form.get('ip_to_remove')
+    restricted_ips.discard(ip_to_remove)
+    # Optionally, save the updated IP restrictions to a persistent storage
+    return redirect(url_for('ip_restrictions'))
 
 
 @app.route('/catalog')
@@ -283,6 +317,8 @@ def message_exists_in_post(post, message):
         if message_exists_in_post(reply, message):
             return True
     return False
+
+
 @app.route('/post', methods=['POST'])
 def post():
     csrf.protect()
@@ -293,12 +329,20 @@ def post():
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
 
+    # Check if the IP address is restricted
+    if ip_address in restricted_ips:
+        session['error_message'] = 'IP address is restricted from posting.'
+        return redirect(url_for('home'))
+
     if user_captcha.upper() != stored_captcha:
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
 
+
+
     if has_too_many_repeating_characters(message):
-        session['error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
+        session[
+            'error_message'] = f'Message contains too many repeating characters (more than {MAX_REPEATING_CHARACTERS} consecutive).'
         return redirect(url_for('home'))
 
     if not message or message.isspace():
@@ -324,7 +368,8 @@ def post():
             post_counts[ip_address] = (1, datetime.now())
         elif count >= USER_POSTS_PER_MIN:
             remaining_time = int((POST_LIMIT_DURATION - time_diff).total_seconds())
-            session['error_message'] = f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
+            session[
+                'error_message'] = f'You can only post {USER_POSTS_PER_MIN} times per minute. Please wait {remaining_time} seconds before posting again.'
             return redirect(url_for('home'))
         else:
             post_counts[ip_address] = (count + 1, datetime.now())

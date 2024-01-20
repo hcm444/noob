@@ -1,0 +1,15 @@
+<!-- ip_restrictions.html -->
+<html>
+<head>
+    <!-- Add necessary styles or scripts -->
+</head>
+<body>
+    <h1>IP Restrictions</h1>
+    <ul>
+        {% for ip in ip_restrictions %}
+            <li>{{ ip }}</li>
+        {% endfor %}
+    </ul>
+    <!-- Add a form for administrators to add or remove IP restrictions -->
+</body>
+</html>

@@ -75,7 +75,7 @@
     <form method="POST" action="/replace_characters">
         {{ form.csrf_token }}
         <input type="text" name="post_number" id="post_number" required>
-        <button class="toggle-replies-button" type="Submit"> > </button>
+        <button class="toggle-replies-button" type="Submit"> D </button>
         <a href="{{ url_for('logout') }}"> L </a>
     </form>
 
@@ -96,7 +96,22 @@
       {% endif %}
     {% endfor %}
   </ul>
+
 </div>
+
+
+<form method="POST" action="{{ url_for('add_ip_restriction') }}">
+    {{ form.csrf_token }}
+    <input type="text" name="ip_to_restrict" required>
+    <button class="toggle-replies-button" type="submit"> + </button>
+</form>
+
+<form method="POST" action="{{ url_for('remove_ip_restriction') }}">
+    {{ form.csrf_token }}
+    <input type="text" name="ip_to_remove" required>
+    <button class="toggle-replies-button" type="submit"> - </button>
+</form>
+
 
 </body>
 </html>
