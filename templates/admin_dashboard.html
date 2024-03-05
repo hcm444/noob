@@ -101,7 +101,7 @@
   <ul>
     {% for post in message_board %}
       <li>
-        {{ post.post_number }} - {{ post.message }} (IP: {{ post.ip_address }})
+        {{ post.post_number }} - {{ post.message }} (IP: {{ post.ip_address }}) (Trip: {{ post.ip_address }})
       </li>
       {% if post.replies %}
         <ul>
