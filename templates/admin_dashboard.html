@@ -101,13 +101,13 @@
   <ul>
     {% for post in message_board %}
       <li>
-        {{ post.post_number }} - {{ post.message }} (IP: {{ post.ip_address }}) (Trip: {{ post.ip_address }})
+        {{ post.post_number }} - {{ post.message }} (IP: {{ post.ip_address }}) (Trip: {{ post.tripcode }})
       </li>
       {% if post.replies %}
         <ul>
           {% for reply in post.replies %}
             <li>
-              {{ reply.post_number }} - {{ reply.message }} (IP: {{ reply.ip_address }})
+              {{ reply.post_number }} - {{ reply.message }} (IP: {{ reply.ip_address }}) (Trip: {{ reply.tripcode }})
             </li>
           {% endfor %}
         </ul>
