@@ -122,7 +122,7 @@
 
     <div class="message" id="post{{ message.post_number }}" >
 
-        <p><strong>#{{ message.post_number }} | {{ message.timestamp }}</strong></p>
+        <p><strong>#{{ message.post_number }} | {{ message.timestamp }} | {{ message.tripcode }}</strong></p>
 
         {% if "########## POST DELETED ##########" in message.message %}
             <p style="color: #FF0000;">{{ message.message }}</p>
@@ -138,7 +138,7 @@
             <div class="replies" id="replies{{ message.post_number }}">
                 {% for reply in message.replies %}
                     <div class="message" style="margin-left: 40px;">
-                        <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }}</strong></p>
+                        <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }} | {{ reply.tripcode }}</strong></p>
 
                         {% if "########## POST DELETED ##########" in reply.message %}
                             <p style="color: #FF0000;">{{ reply.message }}</p>
@@ -151,7 +151,7 @@
                             <div class="replies" id="replies{{ reply.post_number }}">
                                 {% for sub_reply in reply.replies %}
                                     <div class="message" style="margin-left: 80px;">
-                                        <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }}</strong></p>
+                                        <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }} | {{ sub_reply.tripcode }}</strong></p>
 
                                         {% if "########## POST DELETED ##########" in sub_reply.message %}
                                             <p style="color: #FF0000;">{{ sub_reply.message }}</p>

@@ -6,10 +6,8 @@ from PIL import Image, ImageDraw, ImageFont
 import threading
 import colorsys
 import time
-
 import logging
-from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-from difflib import SequenceMatcher
+from flask import jsonify, session, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms.fields.simple import PasswordField
 
@@ -20,6 +18,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
 import sqlite3
+
+from tripcode import generate_tripcode
 
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
@@ -325,7 +325,7 @@ def post():
     global post_counts, post_counter, ip_post_counts
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
-
+    tripcode = generate_tripcode(ip_address)
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
 
@@ -406,6 +406,7 @@ def post():
                 'timestamp': timestamp,
                 'message': message,
                 'ip_address': ip_address,
+                'tripcode': tripcode,
             }
             post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
@@ -425,6 +426,7 @@ def post():
             'message': message,
             'replies': [],
             'ip_address': ip_address,
+            'tripcode': tripcode,  # Include the tripcode in the post information
         }
         post_counter += 1
         message_board.append(post)
@@ -474,6 +476,7 @@ def api():
             'post_number': post['post_number'],
             'timestamp': post['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
             'message': post['message'],
+            'tripcode': post['tripcode'],
         }
 
         if 'replies' in post:
@@ -483,6 +486,7 @@ def api():
                     'post_number': reply['post_number'],
                     'timestamp': reply['timestamp'].strftime('%Y-%m-%d %H:%M:%S'),
                     'message': reply['message'],
+                    'tripcode': reply['tripcode'],
                 }
                 post_info['replies'].append(reply_info)
 
