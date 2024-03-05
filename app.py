@@ -72,6 +72,7 @@ POST_LIMIT_DURATION = timedelta(minutes=1)
 USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
+UNIQUE_COLORS = 400
 
 MAX_REPEATING_CHARACTERS = 9
 message_board = []
@@ -121,18 +122,11 @@ def generate_black_image(message_board):
         x_position = i
         y_position = 100 - min(num_replies, 100)
 
-        # Start with green on the left and red on the right
-        start_color = (0, 255, 0)
-        end_color = (255, 0, 0)
+        # Use the assigned thread color for each parent post
+        thread_color = assign_color(num_replies)
 
-        # Calculate the color gradient for each pixel along the vertical line
         for y in range(y_position, 100):
-            current_color = (
-                int(start_color[0] + (end_color[0] - start_color[0]) * (x_position / 400)),
-                int(start_color[1] + (end_color[1] - start_color[1]) * (x_position / 400)),
-                int(start_color[2] + (end_color[2] - start_color[2]) * (x_position / 400))
-            )
-            black_draw.point((x_position, y), fill=current_color)
+            black_draw.point((x_position, y), fill=thread_color)
 
     return black_image
 
@@ -551,14 +545,13 @@ def api():
 def generate_distinct_colors(num_colors):
     colors = []
     for i in range(num_colors):
-        # Calculate hue to evenly distribute colors in the HSL color space
-        hue = (i / num_colors)  # Vary the hue from 0 to 1
+        # Calculate hue to traverse through red, orange, yellow, green, and blue
+        hue = (i / num_colors) * 0.6  # Vary the hue from 0 to 0.6 for a portion of the spectrum
         rgb = colorsys.hsv_to_rgb(hue, 1, 1)
         colors.append(tuple(int(c * 255) for c in rgb))
     return colors
 
-
-color_palette = generate_distinct_colors(100)
+color_palette = generate_distinct_colors(UNIQUE_COLORS)
 
 
 def assign_color(activity_level):
