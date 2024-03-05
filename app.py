@@ -60,7 +60,7 @@ import json
 with open('config.json') as f:
     config = json.load(f)
 POPULATE_RANGE = 400
-POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
+POPULATE = 0  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
 ENLARGE_FACTOR = 40
