@@ -29,8 +29,11 @@
         const rows = canvasSize / cellSize;
         const columns = canvasSize / cellSize;
         const generationDelay = 200; // Delay between generations in milliseconds
+        const addRandomLiveCellsFrequency = 20; // Add random live cells every 20 generations
+        const numRandomLiveCellsToAdd = 30; // Number of random live cells to add
 
         let grid = createEmptyGrid();
+        let generationCount = 0;
 
         document.addEventListener("DOMContentLoaded", initialize);
 
@@ -77,16 +80,12 @@
                     const liveNeighbors = countLiveNeighbors(row, col);
 
                     if (cell === 1) {
-                        // Any live cell with fewer than two live neighbors dies (underpopulation)
-                        // Any live cell with two or three live neighbors lives on to the next generation
-                        // Any live cell with more than three live neighbors dies (overpopulation)
                         if (liveNeighbors < 2 || liveNeighbors > 3) {
                             nextGeneration[row][col] = 0;
                         } else {
                             nextGeneration[row][col] = 1;
                         }
                     } else {
-                        // Any dead cell with exactly three live neighbors becomes a live cell (reproduction)
                         if (liveNeighbors === 3) {
                             nextGeneration[row][col] = 1;
                         }
@@ -102,10 +101,10 @@
 
             for (let i = -1; i <= 1; i++) {
                 for (let j = -1; j <= 1; j++) {
-                    if (i === 0 && j === 0) continue; // Skip the current cell
+                    if (i === 0 && j === 0) continue;
 
-                    const neighborRow = (row + i + rows) % rows; // Wrap around to the opposite side if out of bounds
-                    const neighborCol = (col + j + columns) % columns; // Wrap around to the opposite side if out of bounds
+                    const neighborRow = (row + i + rows) % rows;
+                    const neighborCol = (col + j + columns) % columns;
 
                     liveNeighbors += grid[neighborRow][neighborCol];
                 }
@@ -116,13 +115,33 @@
 
         function updateGrid() {
             grid = getNextGeneration();
+            generationCount++;
+
+            // Add random live cells every few generations
+            if (generationCount % addRandomLiveCellsFrequency === 0) {
+                addRandomLiveCells(grid, numRandomLiveCellsToAdd);
+            }
         }
 
         function startGame() {
-            setInterval(() => {
+            function animate() {
                 updateGrid();
                 drawGrid();
-            }, generationDelay);
+                requestAnimationFrame(animate);
+            }
+            animate();
+        }
+
+        function addRandomLiveCells(grid, numCells) {
+            const numRows = grid.length;
+            const numCols = grid[0].length;
+
+            for (let i = 0; i < numCells; i++) {
+                const randomRow = Math.floor(Math.random() * numRows);
+                const randomCol = Math.floor(Math.random() * numCols);
+
+                grid[randomRow][randomCol] = 1;
+            }
         }
     </script>
 </body>
