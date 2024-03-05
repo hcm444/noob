@@ -4,6 +4,10 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
     <title>Noob</title>
     <style>
+        .thread-border {
+            border: 2px solid;
+        }
+
         body {
             background-color: #000;
             color: #00FF00;
@@ -34,11 +38,10 @@
         }
 
         li {
-            border: 1px solid #00FF00;
             padding: 10px;
             margin: 10px;
             background-color: #000;
-            width: 160px; /* Adjust the width as needed */
+            width: 160px;
         }
 
         a {
@@ -56,7 +59,7 @@
             -webkit-box-orient: vertical;
             word-wrap: break-word;
             overflow: hidden;
-            max-width: 200px; /* Adjust the max-width as needed */
+            max-width: 200px;
         }
 
         .post-deleted {
@@ -67,7 +70,7 @@
 <body>
     <ul>
         {% for post in catalog_data %}
-            <li>
+            <li class="thread-border" style="border-color: rgb{{ post.parent_post_color }}">
                 <a href="/thread/{{ post.post_number }}">
                     #{{ post.post_number }} | {{ post.total_replies }} | {{ post.timestamp }}
 

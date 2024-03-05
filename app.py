@@ -313,7 +313,8 @@ def catalog():
             'parent_post_number': post.get('parent_post_number', None),
             'message': post['message'],
             'timestamp': post['timestamp'],
-            'total_replies': len(post.get('replies', []))
+            'total_replies': len(post.get('replies', [])),
+            'parent_post_color': assign_color(len(post.get('replies', []))),
         }
         catalog_data.append(post_data)
 
