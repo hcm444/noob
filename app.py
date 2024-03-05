@@ -1,6 +1,8 @@
+import base64
 from datetime import datetime, timedelta
 import re
-
+import lorem
+import random
 from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
@@ -10,7 +12,8 @@ import logging
 from flask import jsonify, session, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms.fields.simple import PasswordField
-
+from io import BytesIO
+from flask import make_response
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFProtect
@@ -56,7 +59,8 @@ import json
 
 with open('config.json') as f:
     config = json.load(f)
-
+POPULATE_RANGE = 400
+POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
 ENLARGE_FACTOR = 40
@@ -75,6 +79,52 @@ post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
+
+
+def populate_board():
+    global message_board, post_counter
+
+    # Your logic to generate random posts and replies goes here
+    # Example: Generating 10 random parent posts
+    for _ in range(POPULATE_RANGE):
+        post = {
+            'post_number': post_counter,
+            'timestamp': datetime.now(),
+            'message': lorem.sentence(),
+            'replies': [],
+            'ip_address': '127.0.0.1',  # Set a dummy IP address for automated posts
+            'tripcode': 'auto_generated',
+        }
+        post_counter += 1
+        message_board.append(post)
+
+        # Generate random replies for each parent post
+        num_replies = random.randint(1, 100)
+        for _ in range(num_replies):
+            reply = {
+                'post_number': post_counter,
+                'timestamp': datetime.now(),
+                'message': lorem.sentence(),
+                'ip_address': '127.0.0.1',  # Set a dummy IP address for automated posts
+                'tripcode': 'auto_generated',
+            }
+            post_counter += 1
+            post['replies'].append(reply)
+
+
+def generate_black_image(message_board):
+    black_image = Image.new('RGB', (400, 101), color=(0, 0, 0))
+    black_draw = ImageDraw.Draw(black_image)
+
+    for i, post in enumerate(message_board):
+        num_replies = len(post.get('replies', []))
+        x_position = i
+        y_position = 100 - min(num_replies, 100)
+
+        # Draw a white line for each thread
+        black_draw.line([(x_position, 100), (x_position, y_position)], fill=(255, 255, 255), width=1)
+
+    return black_image
 
 def load_highest_post_count():
     try:
@@ -299,11 +349,19 @@ def home():
 
     reversed_message_board = list(reversed(message_board))
 
-    messages_to_display = reversed_message_board[start_index:end_index]
 
+    messages_to_display = reversed_message_board[start_index:end_index]
+    black_image = generate_black_image(reversed_message_board)
+
+
+
+    image_io = BytesIO()
+    black_image.save(image_io, 'PNG')
+    image_io.seek(0)
+    base64_image = base64.b64encode(image_io.getvalue()).decode('utf-8')
     # Pass both messages and captcha information to the template
     return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page,
-                           captcha_image=captcha_image, form=MyLoginForm(),
+                           captcha_image=captcha_image, form=MyLoginForm(), thread_image=base64_image,
                            error_message=session.pop('error_message', None))
 
 
@@ -412,6 +470,7 @@ def post():
             parent_post.setdefault('replies', []).append(reply)
             message_board.remove(parent_post)
             message_board.append(parent_post)
+
         else:
             session['error_message'] = 'Referenced post not found.'
             return redirect(url_for('home'))
@@ -434,7 +493,7 @@ def post():
             delete_oldest_parent_post()
 
     session['error_message'] = 'Post successfully created.'
-    print(message_board)
+
     save_highest_post_count(post_counter)
     return redirect(url_for('home'))
 
@@ -442,30 +501,6 @@ def post():
 @app.route('/about')
 def about():
     return render_template('about.html')
-
-
-@app.route('/statistics')
-def statistics():
-    total_posts = len(message_board)
-    total_replies = sum(len(post.get('replies', [])) for post in message_board)
-
-    average_replies_per_post = total_replies / total_posts if total_posts > 0 else 0
-
-    if total_posts > 0:
-        total_age = sum((datetime.now() - post['timestamp']).total_seconds() for post in message_board)
-        average_post_age = total_age / total_posts
-    else:
-        average_post_age = 0
-
-    enlarged_image_path = 'static/enlarged_message_board_image.png'
-
-    return render_template('statistics.html',
-                           total_posts=total_posts,
-                           total_replies=total_replies,
-                           average_replies_per_post=average_replies_per_post,
-                           average_post_age=average_post_age,
-                           enlarged_image_path=enlarged_image_path)
-
 
 @app.route('/api', methods=['GET'])
 def api():
@@ -493,6 +528,7 @@ def api():
         posts_json.append(post_info)
 
     return jsonify(posts_json)
+
 
 
 def generate_distinct_colors(num_colors):
@@ -558,13 +594,15 @@ def generate_message_board_image():
 
         initial_image.save('static/message_board_image.png')
 
-        enlarged_image.save('static/enlarged_message_board_image.png')
-
         time.sleep(IMAGE_GEN_TIME)
 
+if POPULATE:
+    populate_board()
 
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)

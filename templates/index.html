@@ -91,6 +91,7 @@
 
         <!-- Captcha Section -->
         <div class="field">
+            <img src="data:image/png;base64,{{ thread_image }}" alt="Captcha Image" style="float: left; margin-right: 10px;">
             <img src="data:image/png;base64,{{ captcha_image }}" alt="Captcha Image" style="float: left; margin-right: 10px;">
             <label for="captcha">{{ captcha }}</label>
             <div class="control">
@@ -183,12 +184,12 @@
 
 <a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
 <a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
-<a class="toggle-replies-button" href="{{ url_for('statistics')}}"> % </a>
 <a class="toggle-replies-button" href="{{ url_for('about')}}"> ? </a>
 <a href="{{ url_for('login') }}" class="return-button"> ~ </a>
 
 
 <script>
+
 document.addEventListener("DOMContentLoaded", function() {
     var toggleButtons = document.getElementsByClassName("toggle-replies-button");
 
