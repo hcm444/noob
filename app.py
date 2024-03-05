@@ -65,7 +65,7 @@ USERNAME = config.get('username')
 PASSWORD = config.get('password')
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
-IMAGE_GEN_TIME = 60
+IMAGE_GEN_TIME = 600
 POSTS_PER_PAGE = 20  # 20
 MAX_PARENT_POSTS = 400
 POST_LIMIT_DURATION = timedelta(minutes=1)
