@@ -4,6 +4,12 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
     <title>Noob</title>
     <style>
+        .color-box {
+        width: 10px;  /* Adjust the width of the color box as needed */
+        height: 10px; /* Adjust the height of the color box as needed */
+        display: inline-block;
+        margin-right: 5px;  /* Add some margin for spacing */
+    }
         body {
             background-color: #000;
             color: #00FF00; /* Green text */
@@ -134,59 +140,68 @@
 
 </div>
 
-
-
-
 {% for message in messages %}
 
-    <div class="message" id="post{{ message.post_number }}" >
+    {% set color_index = loop.index0 %}  {# Get the current index within the loop #}
+    {% set color = parent_post_colors[color_index] %}  {# Access the corresponding color #}
 
-        <p><strong>#{{ message.post_number }} | {{ message.timestamp }} | {{ message.tripcode }}</strong></p>
-
-        {% if "########## POST DELETED ##########" in message.message %}
-            <p style="color: #FF0000;">{{ message.message }}</p>
-        {% else %}
-            <p>{{ message.message }}</p>
-        {% endif %}
-
-        <a class="toggle-replies-button" href="{{ url_for('thread', post_number=message.post_number) }}"> = </a>
-        <a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
-
-        {% if message.replies %}
-            <a class="toggle-replies-button" data-toggle="replies{{ message.post_number }}"> + </a>
-            <div class="replies" id="replies{{ message.post_number }}">
-                {% for reply in message.replies %}
-                    <div class="message" style="margin-left: 40px;">
-                        <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }} | {{ reply.tripcode }}</strong></p>
-
-                        {% if "########## POST DELETED ##########" in reply.message %}
-                            <p style="color: #FF0000;">{{ reply.message }}</p>
-                        {% else %}
-                            <p>{{ reply.message }}</p>
-                        {% endif %}
+    <div class="message" id="post{{ message.post_number }}">
 
 
-                        {% if reply.replies %}
-                            <div class="replies" id="replies{{ reply.post_number }}">
-                                {% for sub_reply in reply.replies %}
-                                    <div class="message" style="margin-left: 80px;">
-                                        <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }} | {{ sub_reply.tripcode }}</strong></p>
 
-                                        {% if "########## POST DELETED ##########" in sub_reply.message %}
-                                            <p style="color: #FF0000;">{{ sub_reply.message }}</p>
-                                        {% else %}
-                                            <p>{{ sub_reply.message }}</p>
-                                        {% endif %}
-                                    </div>
-                                {% endfor %}
-                            </div>
-                        {% endif %}
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
+        <div class="message-content">
+            <div class="color-box" style="background-color: rgb{{ color }};"></div>  {# Small color box #}
+            <p><strong>#{{ message.post_number }} | {{ message.timestamp }} | {{ message.tripcode }}</strong></p>
+
+            {% if "########## POST DELETED ##########" in message.message %}
+                <p style="color: #FF0000;">{{ message.message }}</p>
+            {% else %}
+                <p>{{ message.message }}</p>
+            {% endif %}
+
+            <a class="toggle-replies-button" href="{{ url_for('thread', post_number=message.post_number) }}"> = </a>
+            <a class="toggle-replies-button" href="{{ url_for('catalog')}}"> # </a>
+
+            {% if message.replies %}
+                <a class="toggle-replies-button" data-toggle="replies{{ message.post_number }}"> + </a>
+                <div class="replies" id="replies{{ message.post_number }}">
+                    {% for reply in message.replies %}
+                        <div class="message" style="margin-left: 40px;">
+
+
+                            <p><strong>#{{ reply.post_number }} | {{ reply.timestamp }} | {{ reply.tripcode }}</strong></p>
+
+                            {% if "########## POST DELETED ##########" in reply.message %}
+                                <p style="color: #FF0000;">{{ reply.message }}</p>
+                            {% else %}
+                                <p>{{ reply.message }}</p>
+                            {% endif %}
+
+                            {% if reply.replies %}
+                                <div class="replies" id="replies{{ reply.post_number }}">
+                                    {% for sub_reply in reply.replies %}
+                                        <div class="message" style="margin-left: 80px;">
+
+
+                                            <p><strong>#{{ sub_reply.post_number }} | {{ sub_reply.timestamp }} | {{ sub_reply.tripcode }}</strong></p>
+
+                                            {% if "########## POST DELETED ##########" in sub_reply.message %}
+                                                <p style="color: #FF0000;">{{ sub_reply.message }}</p>
+                                            {% else %}
+                                                <p>{{ sub_reply.message }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
     </div>
 {% endfor %}
+
 
 <div class="pagination">
     <span>{{ current_page }} | {{ total_pages }}</span>

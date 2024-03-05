@@ -60,7 +60,7 @@ import json
 with open('config.json') as f:
     config = json.load(f)
 POPULATE_RANGE = 400
-POPULATE = 0  # Set to 1 to enable automatic population, 0 to disable
+POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
 ENLARGE_FACTOR = 40
@@ -113,7 +113,7 @@ def populate_board():
 
 
 def generate_black_image(message_board):
-    black_image = Image.new('RGB', (400, 101), color=(0, 0, 0))
+    black_image = Image.new('RGB', (400, 100), color=(0, 0, 0))
     black_draw = ImageDraw.Draw(black_image)
 
     for i, post in enumerate(message_board):
@@ -121,8 +121,18 @@ def generate_black_image(message_board):
         x_position = i
         y_position = 100 - min(num_replies, 100)
 
-        # Draw a white line for each thread
-        black_draw.line([(x_position, 100), (x_position, y_position)], fill=(255, 255, 255), width=1)
+        # Start with green on the left and red on the right
+        start_color = (0, 255, 0)
+        end_color = (255, 0, 0)
+
+        # Calculate the color gradient for each pixel along the vertical line
+        for y in range(y_position, 100):
+            current_color = (
+                int(start_color[0] + (end_color[0] - start_color[0]) * (x_position / 400)),
+                int(start_color[1] + (end_color[1] - start_color[1]) * (x_position / 400)),
+                int(start_color[2] + (end_color[2] - start_color[2]) * (x_position / 400))
+            )
+            black_draw.point((x_position, y), fill=current_color)
 
     return black_image
 
@@ -349,22 +359,29 @@ def home():
 
     reversed_message_board = list(reversed(message_board))
 
-
     messages_to_display = reversed_message_board[start_index:end_index]
     black_image = generate_black_image(reversed_message_board)
 
-
+    # Extract color information for each parent post
+    parent_post_colors = [assign_color(len(post.get('replies', []))) for post in reversed_message_board]
 
     image_io = BytesIO()
     black_image.save(image_io, 'PNG')
     image_io.seek(0)
     base64_image = base64.b64encode(image_io.getvalue()).decode('utf-8')
-    # Pass both messages and captcha information to the template
-    return render_template('index.html', messages=messages_to_display, total_pages=total_pages, current_page=page,
-                           captcha_image=captcha_image, form=MyLoginForm(), thread_image=base64_image,
-                           error_message=session.pop('error_message', None))
 
-
+    # Pass both messages, color information, and captcha to the template
+    return render_template(
+        'index.html',
+        messages=messages_to_display,
+        total_pages=total_pages,
+        current_page=page,
+        captcha_image=captcha_image,
+        form=MyLoginForm(),
+        thread_image=base64_image,
+        error_message=session.pop('error_message', None),
+        parent_post_colors=parent_post_colors  # Add this line to pass color information
+    )
 ip_post_counts = {}
 
 
@@ -545,7 +562,9 @@ color_palette = generate_distinct_colors(100)
 
 
 def assign_color(activity_level):
-    index = min(activity_level, len(color_palette) - 1)
+    max_activity = len(color_palette) - 1
+    normalized_activity = min(activity_level / MAX_REPLIES, 1.0)
+    index = int(normalized_activity * max_activity)
     return color_palette[index]
 
 
@@ -596,11 +615,13 @@ def generate_message_board_image():
 
         time.sleep(IMAGE_GEN_TIME)
 
+image_generation_thread = threading.Thread(target=generate_message_board_image)
+image_generation_thread.start()
+
 if POPULATE:
     populate_board()
 
-image_generation_thread = threading.Thread(target=generate_message_board_image)
-image_generation_thread.start()
+
 
 
 
