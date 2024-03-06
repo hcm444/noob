@@ -162,7 +162,7 @@
 
 
         <div class="message-content">
-            <div class="color-box" style="background-color: rgb{{ color }};"></div>  {# Small color box #}
+            <div class="color-box" style="background-color: rgb({{ color[0] }}, {{ color[1] }}, {{ color[2] }});"></div>
             <p><strong>#{{ message.post_number }} | {{ message.timestamp }} | {{ message.tripcode }}</strong></p>
 
             {% if "########## POST DELETED ##########" in message.message %}

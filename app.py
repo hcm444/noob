@@ -369,8 +369,7 @@ def home():
     black_image, slices = generate_black_image(reversed_message_board)
 
     # Extract color information for each parent post
-    parent_post_colors = [assign_color(len(post.get('replies', []))) for post in reversed_message_board]
-
+    parent_post_colors = [assign_color(len(post.get('replies', []))) for post in messages_to_display]
     # Convert each slice to base64 representation
     slice_base64_list = []
     for i, slice_img in enumerate(slices):
