@@ -4,6 +4,14 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
     <title>Noob</title>
     <style>
+        .thread-slice:hover {
+        opacity: 1; /* Hovered slice remains fully opaque */
+    }
+
+    .thread-slice:not(:hover) {
+        opacity: 0.5; /* Other slices have reduced opacity when not hovered */
+        transition: opacity 0.3s ease; /* Smooth transition effect */
+    }
         .color-box {
         width: 10px;  /* Adjust the width of the color box as needed */
         height: 10px; /* Adjust the height of the color box as needed */
@@ -113,15 +121,19 @@
           {{ form.csrf_token }}
 
         <!-- Captcha Section -->
-        <div class="field">
-            <img src="data:image/png;base64,{{ thread_image }}" alt="Captcha Image" style="float: left; margin-right: 10px;">
-            <img src="data:image/png;base64,{{ captcha_image }}" alt="Captcha Image" style="float: left; margin-right: 10px;">
-            <label for="captcha">{{ captcha }}</label>
-            <div class="control">
-                <textarea class="textarea textarea-wrap" name="captcha" id="captcha" rows="1" cols="50" required></textarea>
-                <button class="toggle-replies-button" type="submit"> > </button>
-            </div>
-        </div>
+       <div class="field">
+    {% for slice_base64 in thread_slices %}
+        <!-- Add the 'thread-slice' class to each slice image -->
+        <img class="thread-slice" src="data:image/png;base64,{{ slice_base64 }}" alt="Thread Slice" style="float: left; margin-right: 0px;">
+    {% endfor %}
+    <img src="data:image/png;base64,{{ captcha_image }}" alt="Captcha Image" style="float: left; margin-left: 10px; margin-right: 10px;">
+    <label for="captcha">{{ captcha }}</label>
+    <div class="control">
+        <textarea class="textarea textarea-wrap" name="captcha" id="captcha" rows="1" cols="50" required></textarea>
+        <button class="toggle-replies-button" type="submit"> > </button>
+    </div>
+</div>
+
 
         <!-- Post Message Section -->
 
@@ -222,7 +234,30 @@
 
 
 <script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var threadSlices = document.querySelectorAll('.thread-slice');
 
+        threadSlices.forEach(function (slice) {
+            slice.addEventListener("mouseover", function () {
+                // Set full opacity for the hovered slice
+                this.style.opacity = 1;
+
+                // Reduce opacity for other slices
+                threadSlices.forEach(function (otherSlice) {
+                    if (otherSlice !== slice) {
+                        otherSlice.style.opacity = 0.5;
+                    }
+                });
+            });
+
+            slice.addEventListener("mouseout", function () {
+                // Restore full opacity for all slices when mouse leaves
+                threadSlices.forEach(function (otherSlice) {
+                    otherSlice.style.opacity = 1;
+                });
+            });
+        });
+    });
 document.addEventListener("DOMContentLoaded", function() {
     var toggleButtons = document.getElementsByClassName("toggle-replies-button");
 

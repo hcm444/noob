@@ -116,6 +116,9 @@ def populate_board():
 def generate_black_image(message_board):
     black_image = Image.new('RGB', (400, 100), color=(0, 0, 0))
     black_draw = ImageDraw.Draw(black_image)
+    slice_width = 20  # Width of each slice
+
+    slices = []
 
     for i, post in enumerate(message_board):
         num_replies = len(post.get('replies', []))
@@ -128,7 +131,14 @@ def generate_black_image(message_board):
         for y in range(y_position, 100):
             black_draw.point((x_position, y), fill=thread_color)
 
-    return black_image
+    # Create 20 slices
+    for i in range(20):
+        left = i * slice_width
+        right = (i + 1) * slice_width
+        slice_image = black_image.crop((left, 0, right, 100))
+        slices.append(slice_image)
+
+    return black_image, slices
 
 def load_highest_post_count():
     try:
@@ -355,11 +365,22 @@ def home():
     reversed_message_board = list(reversed(message_board))
 
     messages_to_display = reversed_message_board[start_index:end_index]
-    black_image = generate_black_image(reversed_message_board)
+    # Generate black image and slices
+    black_image, slices = generate_black_image(reversed_message_board)
 
     # Extract color information for each parent post
     parent_post_colors = [assign_color(len(post.get('replies', []))) for post in reversed_message_board]
 
+    # Convert each slice to base64 representation
+    slice_base64_list = []
+    for i, slice_img in enumerate(slices):
+        slice_io = BytesIO()
+        slice_img.save(slice_io, 'PNG')
+        slice_io.seek(0)
+        slice_base64 = base64.b64encode(slice_io.getvalue()).decode('utf-8')
+        slice_base64_list.append(slice_base64)
+
+    # Convert the black image to base64 representation
     image_io = BytesIO()
     black_image.save(image_io, 'PNG')
     image_io.seek(0)
@@ -374,8 +395,9 @@ def home():
         captcha_image=captcha_image,
         form=MyLoginForm(),
         thread_image=base64_image,
+        thread_slices=slice_base64_list,  # Pass the slice base64 representations
         error_message=session.pop('error_message', None),
-        parent_post_colors=parent_post_colors  # Add this line to pass color information
+        parent_post_colors=parent_post_colors
     )
 ip_post_counts = {}
 
