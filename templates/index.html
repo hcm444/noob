@@ -232,12 +232,19 @@
 <a class="toggle-replies-button" href="{{ url_for('about')}}"> ? </a>
 <a href="{{ url_for('login') }}" class="return-button"> ~ </a>
 
-
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         var threadSlices = document.querySelectorAll('.thread-slice');
 
-        threadSlices.forEach(function (slice) {
+        threadSlices.forEach(function (slice, index) {
+            slice.addEventListener("click", function () {
+                // Simulate the click on the corresponding pagination button
+                var paginationButton = document.querySelectorAll('.page-link')[index];
+                if (paginationButton) {
+                    paginationButton.click();
+                }
+            });
+
             slice.addEventListener("mouseover", function () {
                 // Set full opacity for the hovered slice
                 this.style.opacity = 1;
@@ -251,30 +258,31 @@
             });
 
             slice.addEventListener("mouseout", function () {
-                // Restore full opacity for all slices when mouse leaves
+                // Restore full opacity for all slices when the mouse leaves
                 threadSlices.forEach(function (otherSlice) {
                     otherSlice.style.opacity = 1;
                 });
             });
         });
     });
-document.addEventListener("DOMContentLoaded", function() {
-    var toggleButtons = document.getElementsByClassName("toggle-replies-button");
 
-    Array.from(toggleButtons).forEach(function(button) {
-        button.addEventListener("click", function() {
-            var replyList = document.getElementById(this.getAttribute("data-toggle"));
-            if (replyList) {
-                if (replyList.style.display === "none" || replyList.style.display === "") {
-                    replyList.style.display = "block";
-                } else {
-                    replyList.style.display = "none";
+    document.addEventListener("DOMContentLoaded", function() {
+        var toggleButtons = document.getElementsByClassName("toggle-replies-button");
+
+        Array.from(toggleButtons).forEach(function(button) {
+            button.addEventListener("click", function() {
+                var replyList = document.getElementById(this.getAttribute("data-toggle"));
+                if (replyList) {
+                    if (replyList.style.display === "none" || replyList.style.display === "") {
+                        replyList.style.display = "block";
+                    } else {
+                        replyList.style.display = "none";
+                    }
                 }
-            }
+            });
         });
     });
-});
-
 </script>
+
 </body>
 </html>

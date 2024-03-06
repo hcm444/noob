@@ -67,7 +67,7 @@ ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
 POSTS_PER_PAGE = 20  # 20
-MAX_PARENT_POSTS = 400
+MAX_PARENT_POSTS = 200
 POST_LIMIT_DURATION = timedelta(minutes=1)
 USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
@@ -100,7 +100,7 @@ def populate_board():
         message_board.append(post)
 
         # Generate random replies for each parent post
-        num_replies = random.randint(1, 100)
+        num_replies = random.randint(0, 100)
         for _ in range(num_replies):
             reply = {
                 'post_number': post_counter,
