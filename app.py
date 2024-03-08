@@ -33,6 +33,7 @@ app.secret_key = secret_key
 
 all_opensky_data = []
 
+
 app.config['SCHEDULER_API_ENABLED'] = True
 scheduler = APScheduler()
 scheduler.init_app(app)
