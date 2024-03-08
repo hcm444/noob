@@ -25,9 +25,6 @@ import sqlite3
 from flask_apscheduler import APScheduler  # Add this import
 from tripcode import generate_tripcode
 
-
-
-
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
@@ -92,6 +89,7 @@ post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
+
 def get_all_opensky_data(username, password):
     url = "https://opensky-network.org/api/states/all"
     auth = (username, password)
@@ -105,11 +103,13 @@ def get_all_opensky_data(username, password):
         print(f"Error occurred while fetching OpenSky data: {e}")
         return None
 
+
 def store_opensky_data(data):
     if data is not None:
         # Clear old data before appending new data
         all_opensky_data.clear()
         all_opensky_data.extend(data['states'])
+
 
 def fetch_opensky_data():
     username = "washoe.heli"  # Replace with your OpenSky username
@@ -117,6 +117,8 @@ def fetch_opensky_data():
 
     opensky_data = get_all_opensky_data(username, password)
     store_opensky_data(opensky_data)
+
+
 @app.route('/get_latest_data', methods=['GET'])
 def get_latest_data():
     # You can access the global variable 'all_opensky_data' or fetch data again
@@ -125,16 +127,20 @@ def get_latest_data():
     # Check if there is data available
     if opensky_data:
         # Return the data in JSON format
+        print(opensky_data)
         return jsonify(opensky_data)
     else:
         # If there is no data, return an empty JSON object or an appropriate response
         return jsonify({})
+
+
 @app.route('/map')
 def map():
     # Access the collected data in the 'all_opensky_data' array
     opensky_data = all_opensky_data
 
     return render_template('map.html', opensky_data=opensky_data)
+
 
 def populate_board():
     global message_board, post_counter
@@ -194,6 +200,7 @@ def generate_black_image(message_board):
         slices.append(slice_image)
 
     return black_image, slices
+
 
 def load_highest_post_count():
     try:
@@ -327,9 +334,6 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', username=current_user.id, form=form, message_board=message_board)
 
 
-
-
-
 # Logout route
 @app.route('/logout')
 @login_required
@@ -337,7 +341,9 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
+
 restricted_ips = set()
+
 
 def get_restricted_ips():
     return list(restricted_ips)
@@ -394,7 +400,6 @@ def thread(post_number):
         return render_template('thread.html', post=post)
     else:
         return render_template('404.html', error='404 - Thread not found')
-
 
 
 @app.errorhandler(404)
@@ -454,6 +459,8 @@ def home():
         error_message=session.pop('error_message', None),
         parent_post_colors=parent_post_colors
     )
+
+
 ip_post_counts = {}
 
 
@@ -484,8 +491,6 @@ def post():
     if user_captcha.upper() != stored_captcha:
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
-
-
 
     if has_too_many_repeating_characters(message):
         session[
@@ -591,6 +596,7 @@ def post():
 def about():
     return render_template('about.html')
 
+
 @app.route('/api', methods=['GET'])
 def api():
     posts_json = []
@@ -619,7 +625,6 @@ def api():
     return jsonify(posts_json)
 
 
-
 def generate_distinct_colors(num_colors):
     colors = []
     for i in range(num_colors):
@@ -628,6 +633,7 @@ def generate_distinct_colors(num_colors):
         rgb = colorsys.hsv_to_rgb(hue, 1, 1)
         colors.append(tuple(int(c * 255) for c in rgb))
     return colors
+
 
 color_palette = generate_distinct_colors(UNIQUE_COLORS)
 
@@ -686,15 +692,18 @@ def generate_message_board_image():
 
         time.sleep(IMAGE_GEN_TIME)
 
+
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if POPULATE:
     populate_board()
 
+
 @scheduler.task('interval', id='fetch_opensky_data', seconds=120)  # Increase interval to 30 seconds
 def scheduled_fetch_opensky_data():
     fetch_opensky_data()
+
 
 if __name__ == '__main__':
     scheduler.start()
