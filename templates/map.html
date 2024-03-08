@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenSky Aircraft Plot</title>
+
+        <style>
+        body {
+            background-color: black;
+            color: green; /* Green text color */
+        }
+    </style>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+
+<body>
+    <div id="plotly-map"></div>
+    <table border="1">
+        <tr>
+            <th>icao24</th>
+            <th>callsign</th>
+            <th>origin_country</th>
+            <th>time_position</th>
+            <th>last_contact</th>
+            <th>longitude</th>
+            <th>latitude</th>
+            <th>geo_altitude</th>
+            <th>on_ground</th>
+            <th>velocity</th>
+            <th>true_track</th>
+            <th>sensors</th>
+            <th>baro_altitude</th>
+            <th>squawk</th>
+            <th>spi</th>
+            <th>position_source</th>
+            <th>category</th>
+        </tr>
+        {% for row in opensky_data %}
+            <tr>
+                <td>{{ row[0] }}</td>
+                <td>{{ row[1] }}</td>
+                <td>{{ row[2] }}</td>
+                <td>{{ row[3] }}</td>
+                <td>{{ row[4] }}</td>
+                <td>{{ row[5] }}</td>
+                <td>{{ row[6] }}</td>
+                <td>{{ row[7] }}</td>
+                <td>{{ row[8] }}</td>
+                <td>{{ row[9] }}</td>
+                <td>{{ row[10] }}</td>
+                <td>{{ row[11] }}</td>
+                <td>{{ row[12] }}</td>
+                <td>{{ row[13] }}</td>
+                <td>{{ row[14] }}</td>
+                <td>{{ row[15] }}</td>
+                <td>{{ row[16] }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+    <script>
+        var plotlyMap;
+    var countryColorMap = {};
+
+    function getRandomColor() {
+        var letters = '0123456789ABCDEF';
+        var color = '#';
+        for (var i = 0; i < 6; i++) {
+            color += letters[Math.floor(Math.random() * 16)];
+        }
+        return color;
+    }
+
+    function updateMap() {
+        fetch('/get_latest_data')
+            .then(response => response.json())
+            .then(data => {
+                plotlyMap.update({
+                    lat: data.map(aircraft => aircraft[6]), // Assuming latitude is at index 6
+                    lon: data.map(aircraft => aircraft[5]), // Assuming longitude is at index 5
+                    text: data.map(aircraft => {
+                        return `icao24: ${aircraft[0]}<br>callsign: ${aircraft[1]}<br>origin_country: ${aircraft[2]}<br>geo_altitude: ${aircraft[7]}`;
+                    }),
+                    marker: {
+                        color: data.map(aircraft => {
+                            var originCountry = aircraft[2];
+                            if (!countryColorMap[originCountry]) {
+                                countryColorMap[originCountry] = getRandomColor();
+                            }
+                            return countryColorMap[originCountry];
+                        }),
+                    },
+                });
+            })
+            .catch(error => console.error('Error updating map:', error));
+    }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var openskyData = {{ opensky_data | tojson }};
+
+            var icao24 = openskyData.map(aircraft => aircraft[0]);
+            var callsign = openskyData.map(aircraft => aircraft[1]);
+            var origin_country = openskyData.map(aircraft => aircraft[2]);
+            var longitude = openskyData.map(aircraft => aircraft[5]);
+            var latitude = openskyData.map(aircraft => aircraft[6]);
+            var geo_altitude = openskyData.map(aircraft => aircraft[7]);
+
+            var layout = {
+                geo: {
+                    showland: true,
+                    landcolor: 'green',  // Set land color to black
+                    showocean: true,
+                    oceancolor: 'black', // Set ocean color to black
+                    countrycolor: 'black',  // Set country borders color to green
+                    countrywidth: 1,  // Set country border width
+                    showcountries: true,
+
+                },
+
+                height: 600,
+                paper_bgcolor: 'black',  // Set Plotly map background color to black
+                plot_bgcolor: 'black',  // Set plot background color to black
+
+            };
+
+            var trace = {
+                type: 'scattergeo',
+                mode: 'markers',
+                lat: latitude,
+                lon: longitude,
+                marker: {
+                    size: 3,
+                    opacity: 0.8,
+                    color: 'white',
+
+                },
+                text: icao24.map((icao24, index) => {
+                    return 'icao24: ' + icao24 + '<br>' +
+                        'callsign: ' + callsign[index] + '<br>' +
+                        'origin_country: ' + origin_country[index] + '<br>' +
+                        'geo_altitude: ' + geo_altitude[index];
+                })
+            };
+
+            plotlyMap = Plotly.newPlot('plotly-map', [trace], layout);
+
+            // Call the updateMap function when the page loads
+            updateMap();
+
+            // Call the updateMap function every 30 seconds
+            setInterval(updateMap, 1200000);
+        });
+    </script>
+</body>
+
+</html>
