@@ -10,7 +10,6 @@ import colorsys
 from flask_cors import CORS
 import requests
 import time
-import logging
 from flask import jsonify, session, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms.fields.simple import PasswordField
@@ -25,7 +24,7 @@ import secrets
 import sqlite3
 from flask_apscheduler import APScheduler  # Add this import
 from tripcode import generate_tripcode
-
+import logging
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
@@ -122,17 +121,17 @@ def fetch_opensky_data():
 
 @app.route('/get_latest_data', methods=['GET'])
 def get_latest_data():
-    # You can access the global variable 'all_opensky_data' or fetch data again
-    opensky_data = all_opensky_data
+    try:
+        opensky_data = all_opensky_data
+        logging.info(f"Received OpenSky data: {opensky_data}")
 
-    # Check if there is data available
-    if opensky_data:
-        # Return the data in JSON format
-        print(opensky_data)
-        return jsonify(opensky_data)
-    else:
-        # If there is no data, return an empty JSON object or an appropriate response
-        return jsonify({})
+        if opensky_data:
+            return jsonify(opensky_data)
+        else:
+            return jsonify({})
+    except Exception as e:
+        logging.error(f"Error in get_latest_data: {e}")
+        return jsonify({"error": "Internal Server Error"}), 500
 
 
 @app.route('/map')
