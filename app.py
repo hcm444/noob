@@ -122,8 +122,8 @@ def fetch_opensky_data():
 @app.route('/get_latest_data', methods=['GET'])
 def get_latest_data():
     try:
-        opensky_data = all_opensky_data
-        logging.info(f"Received OpenSky data: {opensky_data}")
+        opensky_data = get_all_opensky_data(OPENSKY_USERNAME, OPENSKY_PASSWORD)
+        logging.debug(f"Received OpenSky data: {opensky_data}")
 
         if opensky_data:
             return jsonify(opensky_data)
@@ -132,6 +132,7 @@ def get_latest_data():
     except Exception as e:
         logging.error(f"Error in get_latest_data: {e}")
         return jsonify({"error": "Internal Server Error"}), 500
+
 
 
 @app.route('/map')
