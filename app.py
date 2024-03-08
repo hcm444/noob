@@ -28,7 +28,7 @@ import logging
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins
+
 app.secret_key = secret_key
 
 all_opensky_data = []
