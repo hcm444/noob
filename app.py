@@ -696,14 +696,12 @@ def generate_message_board_image():
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
-if POPULATE:
-    populate_board()
-
-
 @scheduler.task('interval', id='fetch_opensky_data', seconds=120)  # Increase interval to 30 seconds
 def scheduled_fetch_opensky_data():
     fetch_opensky_data()
 
+if POPULATE:
+    populate_board()
 
 if __name__ == '__main__':
     scheduler.start()
