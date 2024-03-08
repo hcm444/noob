@@ -149,6 +149,7 @@ def populate_board():
             'tripcode': 'auto_generated',
         }
         post_counter += 1
+
         message_board.append(post)
 
         # Generate random replies for each parent post
