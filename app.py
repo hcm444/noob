@@ -118,10 +118,14 @@ def fetch_opensky_data():
 
 @app.route('/map')
 def map():
-    # Access the collected data in the 'all_opensky_data' array
-    opensky_data = all_opensky_data
+    try:
+        # Your existing code for the map route
+        opensky_data = all_opensky_data
+        return render_template('map.html', opensky_data=opensky_data)
+    except Exception as e:
+        print(f"Error in /map route: {e}")
+        return "Internal Server Error", 500
 
-    return render_template('map.html', opensky_data=opensky_data)
 
 
 # Schedule the OpenSky data fetching as a background task
