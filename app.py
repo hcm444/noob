@@ -48,7 +48,7 @@ login_manager.login_view = 'login'
 class User(UserMixin):
     pass
 
-#nice
+
 @login_manager.user_loader
 def load_user(user_id):
     user = User()
@@ -112,7 +112,7 @@ def store_opensky_data(data):
 
 
 def fetch_opensky_data():
-    username = "wawshoe.heli"  # Replace with your OpenSky username
+    username = "washoe.heli"  # Replace with your OpenSky username
     password = "B0r3alB0r3al"  # Replace with your OpenSky password
 
     opensky_data = get_all_opensky_data(username, password)
