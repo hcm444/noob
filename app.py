@@ -67,7 +67,9 @@ import json
 
 with open('config.json') as f:
     config = json.load(f)
-POPULATE_RANGE = 10
+POPULATE_RANGE = 400
+POP_MIN = 0
+POP_MAX = 100
 POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
@@ -150,7 +152,7 @@ def populate_board():
         message_board.append(post)
 
         # Generate random replies for each parent post
-        num_replies = random.randint(0, 20)
+        num_replies = random.randint(POP_MIN, POP_MAX)
         for _ in range(num_replies):
             reply = {
                 'post_number': post_counter,
