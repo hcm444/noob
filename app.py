@@ -7,6 +7,7 @@ from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
 import colorsys
+from flask_cors import CORS
 import requests
 import time
 import logging
@@ -14,7 +15,7 @@ from flask import jsonify, session, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms.fields.simple import PasswordField
 from io import BytesIO
-from flask import make_response
+import json
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFProtect
@@ -28,6 +29,7 @@ from tripcode import generate_tripcode
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
+CORS(app)  # Enable CORS for all routes
 app.secret_key = secret_key
 
 all_opensky_data = []
@@ -43,8 +45,6 @@ cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
-
-# Mockup of user class (replace it with your user management logic)
 class User(UserMixin):
     pass
 
@@ -62,7 +62,6 @@ class MyLoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
-import json
 
 with open('config.json') as f:
     config = json.load(f)
@@ -72,6 +71,9 @@ POP_MAX = 100
 POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
+OPENSKY_USERNAME = config.get('opensky_username')
+OPENSKY_PASSWORD = config.get('opensky_password')
+OPENSKY_PING = 120
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
@@ -82,7 +84,6 @@ USER_POSTS_PER_MIN = 3  # 2 or 3
 MAX_REPLIES = 100
 YOUR_THRESHOLD = 0.5
 UNIQUE_COLORS = 400
-
 MAX_REPEATING_CHARACTERS = 9
 message_board = []
 post_counts = {}
@@ -112,8 +113,8 @@ def store_opensky_data(data):
 
 
 def fetch_opensky_data():
-    username = "washoe.heli"  # Replace with your OpenSky username
-    password = "B0r3alB0r3al"  # Replace with your OpenSky password
+    username = OPENSKY_USERNAME  # Replace with your OpenSky username
+    password = OPENSKY_PASSWORD  # Replace with your OpenSky password
 
     opensky_data = get_all_opensky_data(username, password)
     store_opensky_data(opensky_data)
@@ -696,7 +697,7 @@ def generate_message_board_image():
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
-@scheduler.task('interval', id='fetch_opensky_data', seconds=120)  # Increase interval to 30 seconds
+@scheduler.task('interval', id='fetch_opensky_data', seconds=OPENSKY_PING)  # Increase interval to 30 seconds
 def scheduled_fetch_opensky_data():
     fetch_opensky_data()
 
