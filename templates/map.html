@@ -61,7 +61,7 @@
     </table>
 
     <script>
-        var plotlyMap;
+    var plotlyMap;
     var countryColorMap = {};
 
     function getRandomColor() {
@@ -75,11 +75,20 @@
 
     function updateMap() {
         fetch('/get_latest_data')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                if (!Array.isArray(data)) {
+                    console.error('Invalid data format:', data);
+                    return;
+                }
                 plotlyMap.update({
-                    lat: data.map(aircraft => aircraft[6]), // Assuming latitude is at index 6
-                    lon: data.map(aircraft => aircraft[5]), // Assuming longitude is at index 5
+                    lat: data.map(aircraft => aircraft[6]),
+                    lon: data.map(aircraft => aircraft[5]),
                     text: data.map(aircraft => {
                         return `icao24: ${aircraft[0]}<br>callsign: ${aircraft[1]}<br>origin_country: ${aircraft[2]}<br>geo_altitude: ${aircraft[7]}`;
                     }),
@@ -97,62 +106,59 @@
             .catch(error => console.error('Error updating map:', error));
     }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            var openskyData = {{ opensky_data | tojson }};
+    document.addEventListener('DOMContentLoaded', function () {
+        var openskyData = {{ opensky_data | tojson }};
 
-            var icao24 = openskyData.map(aircraft => aircraft[0]);
-            var callsign = openskyData.map(aircraft => aircraft[1]);
-            var origin_country = openskyData.map(aircraft => aircraft[2]);
-            var longitude = openskyData.map(aircraft => aircraft[5]);
-            var latitude = openskyData.map(aircraft => aircraft[6]);
-            var geo_altitude = openskyData.map(aircraft => aircraft[7]);
+        var icao24 = openskyData.map(aircraft => aircraft[0]);
+        var callsign = openskyData.map(aircraft => aircraft[1]);
+        var origin_country = openskyData.map(aircraft => aircraft[2]);
+        var longitude = openskyData.map(aircraft => aircraft[5]);
+        var latitude = openskyData.map(aircraft => aircraft[6]);
+        var geo_altitude = openskyData.map(aircraft => aircraft[7]);
 
-            var layout = {
-                geo: {
-                    showland: true,
-                    landcolor: 'green',  // Set land color to black
-                    showocean: true,
-                    oceancolor: 'black', // Set ocean color to black
-                    countrycolor: 'black',  // Set country borders color to green
-                    countrywidth: 1,  // Set country border width
-                    showcountries: true,
+        var layout = {
+            geo: {
+                showland: true,
+                landcolor: 'green',
+                showocean: true,
+                oceancolor: 'black',
+                countrycolor: 'black',
+                countrywidth: 1,
+                showcountries: true,
+            },
+            height: 600,
+            paper_bgcolor: 'black',
+            plot_bgcolor: 'black',
+        };
 
-                },
+        var trace = {
+            type: 'scattergeo',
+            mode: 'markers',
+            lat: latitude,
+            lon: longitude,
+            marker: {
+                size: 3,
+                opacity: 0.8,
+                color: 'white',
+            },
+            text: icao24.map((icao24, index) => {
+                return 'icao24: ' + icao24 + '<br>' +
+                    'callsign: ' + callsign[index] + '<br>' +
+                    'origin_country: ' + origin_country[index] + '<br>' +
+                    'geo_altitude: ' + geo_altitude[index];
+            })
+        };
 
-                height: 600,
-                paper_bgcolor: 'black',  // Set Plotly map background color to black
-                plot_bgcolor: 'black',  // Set plot background color to black
+        plotlyMap = Plotly.newPlot('plotly-map', [trace], layout);
 
-            };
+        // Call the updateMap function when the page loads
+        updateMap();
 
-            var trace = {
-                type: 'scattergeo',
-                mode: 'markers',
-                lat: latitude,
-                lon: longitude,
-                marker: {
-                    size: 3,
-                    opacity: 0.8,
-                    color: 'white',
+        // Call the updateMap function every 30 seconds
+        setInterval(updateMap, 1200000);
+    });
+</script>
 
-                },
-                text: icao24.map((icao24, index) => {
-                    return 'icao24: ' + icao24 + '<br>' +
-                        'callsign: ' + callsign[index] + '<br>' +
-                        'origin_country: ' + origin_country[index] + '<br>' +
-                        'geo_altitude: ' + geo_altitude[index];
-                })
-            };
-
-            plotlyMap = Plotly.newPlot('plotly-map', [trace], layout);
-
-            // Call the updateMap function when the page loads
-            updateMap();
-
-            // Call the updateMap function every 30 seconds
-            setInterval(updateMap, 1200000);
-        });
-    </script>
 </body>
 
 </html>
