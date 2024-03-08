@@ -5,7 +5,7 @@
     <title>Noob</title>
     <style>
         #gameCanvas {
-            border: 1px solid #00FF00;
+            border: 1px solid green;
             background-color: black;
         }
     </style>
@@ -29,7 +29,7 @@
         .toggle-replies-button {
     display: inline-block;
     background-color: #000; /* Green button color */
-    color: #00FF00; /* Black text */
+    color: green; /* Black text */
     padding: 5px 10px; /* Adjust padding as needed */
     margin-right: 5px; /* Adjust margin as needed */
     text-decoration: none;
@@ -37,7 +37,7 @@
 }
 
         #gameCanvas {
-            border: 1px solid #00FF00;
+            border: 1px solid green;
             background-color: black;
         }
     </style>
@@ -125,14 +125,14 @@
             context.clearRect(0, 0, canvas.width, canvas.height);
 
             snake.forEach(segment => {
-                context.fillStyle = "#00FF00";
+                context.fillStyle = "green";
                 context.fillRect(segment.x, segment.y, 10, 10);
             });
 
             context.fillStyle = "red";
             context.fillRect(food.x, food.y, 10, 10);
 
-            context.fillStyle = "#00FF00";
+            context.fillStyle = "green";
             context.font = "16px Helvetica";
             context.fillText("Score: " + score.toFixed(2), 10, 20);
 
@@ -140,7 +140,7 @@
             if (gameOver) {
                 saveHighScore(score);
 
-                context.fillStyle = "#00FF00";
+                context.fillStyle = "green";
                 context.font = "30px Helvetica";
                 context.fillText("Game Over", canvas.width / 2 - 80, canvas.height / 2);
             }

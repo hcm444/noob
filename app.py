@@ -13,7 +13,6 @@ from flask import jsonify, session, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms.fields.simple import PasswordField
 from io import BytesIO
-from flask import make_response
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
 from flask_wtf.csrf import CSRFProtect
@@ -21,8 +20,11 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
 import sqlite3
-
 from tripcode import generate_tripcode
+from flask_apscheduler import APScheduler  # Add this import
+import requests
+
+all_opensky_data = []
 
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
@@ -35,6 +37,10 @@ cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
+
+app.config['SCHEDULER_API_ENABLED'] = True
+scheduler = APScheduler()
+scheduler.init_app(app)
 
 
 # Mockup of user class (replace it with your user management logic)
@@ -80,6 +86,48 @@ post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
 
+
+def get_all_opensky_data(username, password):
+    url = "https://opensky-network.org/api/states/all"
+    auth = (username, password)
+
+    try:
+        response = requests.get(url, auth=auth)
+        response.raise_for_status()
+        data = response.json()
+        return data
+    except requests.exceptions.RequestException as e:
+        print(f"Error occurred while fetching OpenSky data: {e}")
+        return None
+
+
+def store_opensky_data(data):
+    if data is not None:
+        # Clear old data before appending new data
+        all_opensky_data.clear()
+        all_opensky_data.extend(data['states'])
+
+
+def fetch_opensky_data():
+    username = "washoe.heli"  # Replace with your OpenSky username
+    password = "B0r3alB0r3al"  # Replace with your OpenSky password
+
+    opensky_data = get_all_opensky_data(username, password)
+    store_opensky_data(opensky_data)
+
+
+@app.route('/map')
+def map():
+    # Access the collected data in the 'all_opensky_data' array
+    opensky_data = all_opensky_data
+
+    return render_template('map.html', opensky_data=opensky_data)
+
+
+# Schedule the OpenSky data fetching as a background task
+@scheduler.task('interval', id='fetch_opensky_data', seconds=120)  # Increase interval to 30 seconds
+def scheduled_fetch_opensky_data():
+    fetch_opensky_data()
 
 
 def populate_board():
@@ -139,6 +187,7 @@ def generate_black_image(message_board):
         slices.append(slice_image)
 
     return black_image, slices
+
 
 def load_highest_post_count():
     try:
@@ -272,9 +321,6 @@ def admin_dashboard():
     return render_template('admin_dashboard.html', username=current_user.id, form=form, message_board=message_board)
 
 
-
-
-
 # Logout route
 @app.route('/logout')
 @login_required
@@ -282,7 +328,9 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
+
 restricted_ips = set()
+
 
 def get_restricted_ips():
     return list(restricted_ips)
@@ -398,6 +446,8 @@ def home():
         error_message=session.pop('error_message', None),
         parent_post_colors=parent_post_colors
     )
+
+
 ip_post_counts = {}
 
 
@@ -428,8 +478,6 @@ def post():
     if user_captcha.upper() != stored_captcha:
         session['error_message'] = 'CAPTCHA verification failed.'
         return redirect(url_for('home'))
-
-
 
     if has_too_many_repeating_characters(message):
         session[
@@ -535,6 +583,7 @@ def post():
 def about():
     return render_template('about.html')
 
+
 @app.route('/api', methods=['GET'])
 def api():
     posts_json = []
@@ -563,7 +612,6 @@ def api():
     return jsonify(posts_json)
 
 
-
 def generate_distinct_colors(num_colors):
     colors = []
     for i in range(num_colors):
@@ -572,6 +620,7 @@ def generate_distinct_colors(num_colors):
         rgb = colorsys.hsv_to_rgb(hue, 1, 1)
         colors.append(tuple(int(c * 255) for c in rgb))
     return colors
+
 
 color_palette = generate_distinct_colors(UNIQUE_COLORS)
 
@@ -630,15 +679,13 @@ def generate_message_board_image():
 
         time.sleep(IMAGE_GEN_TIME)
 
+
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
 if POPULATE:
     populate_board()
 
-
-
-
-
 if __name__ == '__main__':
+    scheduler.start()
     app.run(debug=True)

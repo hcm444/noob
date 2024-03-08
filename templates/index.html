@@ -20,7 +20,7 @@
     }
         body {
             background-color: #000;
-            color: #00FF00; /* Green text */
+            color: green; /* Green text */
             font-family: Arial, sans-serif;
             margin: 20px;
         }
@@ -30,7 +30,7 @@
         }
 
         .message {
-            border: 1px solid #00FF00; /* Green border */
+            border: 1px solid green; /* Green border */
             padding: 10px;
             margin: 10px;
             background-color: #000; /* Dark background */
@@ -43,7 +43,7 @@
         }
 
         .new-post {
-            border: 1px solid #00FF00;
+            border: 1px solid green;
             padding: 10px;
             margin: 10px;
             background-color: #000;
@@ -58,7 +58,7 @@
         .toggle-replies-button {
     display: inline-block;
     background-color: #000; /* Green button color */
-    color: #00FF00; /* Black text */
+    color: green; /* Black text */
     padding: 5px 10px; /* Adjust padding as needed */
     margin-right: 5px; /* Adjust margin as needed */
     text-decoration: none;
@@ -80,7 +80,7 @@
         }
 
         a {
-            color: #00FF00; /* Green link color */
+            color: green; /* Green link color */
             text-decoration: none;
         }
 
@@ -90,7 +90,7 @@
 
         /* Change button colors */
         .button.is-primary {
-            background-color: #00FF00; /* Green button color */
+            background-color: green; /* Green button color */
             color: #000; /* Black text */
         }
     </style>
@@ -98,7 +98,7 @@
 <body>
 
 <div class="pagination">
-
+<a class="toggle-replies-button" href="{{ url_for('map')}}"> M </a>
 <a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
 <a class="toggle-replies-button" href="{{ url_for('about')}}"> ? </a>
 
