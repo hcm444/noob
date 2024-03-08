@@ -23,7 +23,7 @@ import sqlite3
 from tripcode import generate_tripcode
 from flask_apscheduler import APScheduler  # Add this import
 import requests
-
+import json
 all_opensky_data = []
 
 secret_key = secrets.token_hex(32)
@@ -61,7 +61,7 @@ class MyLoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
-import json
+
 
 with open('config.json') as f:
     config = json.load(f)
@@ -117,7 +117,7 @@ def fetch_opensky_data():
 
 
 @app.route('/map')
-def map():
+def mapview():
     try:
         # Your existing code for the map route
         opensky_data = all_opensky_data
