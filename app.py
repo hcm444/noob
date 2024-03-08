@@ -25,17 +25,19 @@ import sqlite3
 from flask_apscheduler import APScheduler  # Add this import
 from tripcode import generate_tripcode
 
-app = Flask(__name__)
-all_opensky_data = []
 
-app.config['SCHEDULER_API_ENABLED'] = True
-scheduler = APScheduler()
-scheduler.init_app(app)
+
 
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
 app.secret_key = secret_key
+
+all_opensky_data = []
+
+app.config['SCHEDULER_API_ENABLED'] = True
+scheduler = APScheduler()
+scheduler.init_app(app)
 
 app.config['SESSION_COOKIE_SECURE'] = True
 csrf = CSRFProtect(app)
