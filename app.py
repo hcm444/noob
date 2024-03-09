@@ -28,6 +28,7 @@ from tripcode import generate_tripcode
 import logging
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
+
 app = Flask(__name__, static_url_path='/static')
 CORS(app)
 app.secret_key = secret_key
