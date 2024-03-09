@@ -1,4 +1,5 @@
 import base64
+import os
 from datetime import datetime, timedelta
 import re
 import lorem
@@ -10,7 +11,7 @@ import colorsys
 from flask_cors import CORS
 import requests
 import time
-from flask import jsonify, session, redirect, url_for
+from flask import jsonify, session, redirect, url_for, make_response, send_from_directory
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from wtforms.fields.simple import PasswordField
 from io import BytesIO
@@ -86,6 +87,15 @@ message_board = []
 post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'), 'favicon.ico', mimetype='image/vnd.microsoft.icon')
+@app.route('/')
+def set_cookie():
+    response = make_response(render_template('index.html'))
+    response.set_cookie('example_cookie', 'cookie_value', samesite='None', secure=True)
+    return response
 
 def get_all_opensky_data(username, password):
     url = "https://opensky-network.org/api/states/all"
