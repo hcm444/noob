@@ -28,7 +28,7 @@ import logging
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
-
+CORS(app)
 all_opensky_data = []
 fetch_interval_seconds = 120  # Adjust the interval as needed
 fetch_opensky_data_lock = threading.Lock()
