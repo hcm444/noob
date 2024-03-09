@@ -22,13 +22,14 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
 import sqlite3
+
 from flask_apscheduler import APScheduler  # Add this import
 from tripcode import generate_tripcode
 import logging
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
-
+CORS(app)
 app.secret_key = secret_key
 all_opensky_data = []
 fetch_interval_seconds = 120  # Adjust the interval as needed
