@@ -18,7 +18,7 @@ def fetch_opensky_data(username, password):
 
 
 def send_opensky_data_to_flask(data):
-    url = "hhttps://stingray-app-85uqm.ondigitalocean.app/api2"
+    url = "https://stingray-app-85uqm.ondigitalocean.app/api2"
     headers = {"Content-Type": "application/json"}
 
     try:
