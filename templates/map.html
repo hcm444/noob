@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
+        integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
+        crossorigin="" />
+    <style type="text/css">
+        html { height: 100% }
+        body { height: 100%; margin: 0; padding: 0 }
+        .plane-icon { padding:0px; margin:0px; }
+        #map_canvas { height: 100% }
+        #info { position: absolute; width:20%; height:100%; bottom:0px; right:0px; top:0px; background-color: white; border-left:1px #666 solid; font-family:Helvetica; }
+        #info div { padding:0px; padding-left:10px; margin:0px; }
+        #info div h1 { margin-top:10px; font-size:16px; }
+        #info div p { font-size:14px; color:#333; }
+    </style>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
+        integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
+        crossorigin=""></script>
+    <script type="text/javascript">
+        var Map = null;
+        var Planes = {};
+        var NumPlanes = 0;
+        var Selected = null;
+
+        function getIconForPlane(plane) {
+    var triangleSize = 20;
+    var rotation = plane.heading || 0;  // Use heading if available, default to 0 if not
+    var triangleHtml = '<svg height="' + triangleSize +
+        '" width="' + triangleSize +
+        '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(' + rotation + 'deg);">';
+    triangleHtml += '<path d="M12 2 L20 21 L12 17 L4 21 Z"></path>';
+    triangleHtml += '</svg>';
+    var icon = L.divIcon({
+        html: triangleHtml,
+        className: 'plane-icon',
+        iconSize: [triangleSize, triangleSize],
+        iconAnchor: [triangleSize / 2, triangleSize / 2],
+    });
+    return icon;
+}
+
+        function selectPlane(planehex) {
+            if (!Planes[planehex]) return;
+            var old = Selected;
+            Selected = planehex;
+            if (Planes[old]) {
+                Planes[old].marker.setIcon(getIconForPlane(Planes[old]));
+            }
+            Planes[Selected].marker.setIcon(getIconForPlane(Planes[Selected]));
+            refreshSelectedInfo();
+        }
+
+        function selectPlaneCallback(hex) {
+    return function () {
+        if (Selected === hex) {
+            // Deselect the plane if it's already selected
+            Selected = null;
+            refreshSelectedInfo();  // Update the info panel
+        } else {
+            // Select the clicked plane
+            Selected = hex;
+            refreshSelectedInfo();  // Update the info panel
+        }
+
+        // Update the markers to reflect the selection
+        for (var planeHex in Planes) {
+            var plane = Planes[planeHex];
+            plane.marker.setIcon(getIconForPlane(plane));
+        }
+    };
+}
+
+        function refreshSelectedInfo() {
+            var i = document.getElementById('selinfo');
+            var p = Planes[Selected];
+            if (!p) return;
+            var html = 'ICAO: ' + p.icao24 + '<br>';
+            if (p.callsign.length) {
+                html += '<b>' + p.callsign + '</b><br>';
+            }
+            html += 'Altitude: ' + p.altitude + ' feet<br>';
+            html += 'Speed: ' + p.speed + ' knots<br>';
+            html += 'Coordinates: ' + p.latitude + ', ' + p.longitude + '<br>';
+            i.innerHTML = html;
+        }
+
+        function fetchData() {
+            $.getJSON('/api2', function (data) {
+                var stillhere = {};
+                for (var j = 0; j < data.length; j++) {
+                    var plane = data[j];
+                    var marker = null;
+                    stillhere[plane.icao24] = true;
+                    var icao24 = plane.icao24;
+                    var callsign = plane.callsign;
+                    var altitude = plane.altitude;
+                    var speed = plane.speed;
+                    var latitude = plane.latitude;
+                    var longitude = plane.longitude;
+                    var heading = plane.heading;
+                    if (Planes[icao24]) {
+                        var myplane = Planes[icao24];
+                        marker = myplane.marker;
+                        marker.setLatLng([latitude, longitude]);
+                        marker.setIcon(getIconForPlane({
+                            icao24: icao24,
+                            altitude: altitude,
+                            speed: speed,
+                            latitude: latitude,
+                            longitude: longitude,
+                            heading: heading,
+                            callsign: callsign
+                        }));
+                        myplane.altitude = altitude;
+                        myplane.speed = speed;
+                        myplane.latitude = latitude;
+                        myplane.longitude = longitude;
+                        myplane.heading = heading;
+                        myplane.callsign = callsign;
+                        if (myplane.icao24 == Selected)
+                            refreshSelectedInfo();
+                    } else {
+                        var icon = getIconForPlane({
+                            icao24: icao24,
+                            altitude: altitude,
+                            speed: speed,
+                            latitude: latitude,
+                            longitude: longitude,
+                            heading: heading,
+                            callsign: callsign
+                        });
+                        marker = L.marker([latitude, longitude], { icon: icon }).addTo(Map);
+                        marker.on('click', selectPlaneCallback(icao24));
+                        Planes[icao24] = {
+                            icao24: icao24,
+                            altitude: altitude,
+                            speed: speed,
+                            latitude: latitude,
+                            longitude: longitude,
+                            heading: heading,
+                            callsign: callsign,
+                            marker: marker
+                        };
+                    }
+                }
+                NumPlanes = data.length;
+refreshGeneralInfo();  // Update the count display
+
+                for (var p in Planes) {
+                    if (!stillhere[p]) {
+                        Map.removeLayer(Planes[p].marker);
+                        delete Planes[p];
+                    }
+                }
+            });
+        }
+        function refreshGeneralInfo() {
+    var i = document.getElementById('geninfo');
+    i.innerHTML = NumPlanes + ' aircraft on screen.';
+}
+        function initialize() {
+            Map = L.map('map_canvas').setView([37.0, 13.0], 3);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: 'Map data &copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors, <a href="https://creativecommons.org/licenses/by-sa/2.0/">CC-BY-SA</a>, Imagery © <a href="https://www.mapbox.com/">Mapbox</a>',
+                maxZoom: 18,
+                id: 'mapbox/streets-v11',
+                accessToken: 'your.mapbox.access.token'
+            }).addTo(Map);
+            window.setInterval(function () {
+                fetchData();
+                refreshGeneralInfo();
+            }, 100);
+        }
+    </script>
+</head>
+
+<body onload="initialize()">
+    <div id="map_canvas" style="width:80%; height:100%"></div>
+    <div id="info">
+        <div>
+            <h1>Dump1090</h1>
+            <p id="geninfo"></p>
+            <p id="selinfo">Click on a plane for info.</p>
+        </div>
+    </div>
+</body>
+
+</html>
