@@ -31,12 +31,6 @@ app = Flask(__name__, static_url_path='/static')
 
 app.secret_key = secret_key
 
-all_opensky_data = []
-
-
-app.config['SCHEDULER_API_ENABLED'] = True
-scheduler = APScheduler()
-scheduler.init_app(app)
 
 app.config['SESSION_COOKIE_SECURE'] = True
 csrf = CSRFProtect(app)
@@ -71,9 +65,6 @@ POP_MAX = 100
 POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
-OPENSKY_USERNAME = config.get('opensky_username')
-OPENSKY_PASSWORD = config.get('opensky_password')
-OPENSKY_PING = 120
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
@@ -89,60 +80,6 @@ message_board = []
 post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
-
-
-def get_all_opensky_data(username, password):
-    url = "https://opensky-network.org/api/states/all"
-    auth = (username, password)
-
-    try:
-        response = requests.get(url, auth=auth)
-        response.raise_for_status()
-        data = response.json()
-        return data
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred while fetching OpenSky data: {e}")
-        return None
-
-
-def store_opensky_data(data):
-    if data is not None:
-        # Clear old data before appending new data
-        all_opensky_data.clear()
-        all_opensky_data.extend(data['states'])
-
-
-def fetch_opensky_data():
-    username = OPENSKY_USERNAME  # Replace with your OpenSky username
-    password = OPENSKY_PASSWORD  # Replace with your OpenSky password
-
-    opensky_data = get_all_opensky_data(username, password)
-    store_opensky_data(opensky_data)
-
-
-@app.route('/get_latest_data', methods=['GET'])
-def get_latest_data():
-    try:
-        opensky_data = get_all_opensky_data(OPENSKY_USERNAME, OPENSKY_PASSWORD)
-        logging.debug(f"Received OpenSky data: {opensky_data}")
-
-        if opensky_data:
-            return jsonify(opensky_data)
-        else:
-            return jsonify({})
-    except Exception as e:
-        logging.error(f"Error in get_latest_data: {e}")
-        return jsonify({"error": "Internal Server Error"}), 500
-
-
-
-@app.route('/map')
-def map():
-    # Access the collected data in the 'all_opensky_data' array
-    opensky_data = all_opensky_data
-
-    return render_template('map.html', opensky_data=opensky_data)
-
 
 def populate_board():
     global message_board, post_counter
@@ -698,13 +635,9 @@ def generate_message_board_image():
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
-@scheduler.task('interval', id='fetch_opensky_data', seconds=OPENSKY_PING)  # Increase interval to 30 seconds
-def scheduled_fetch_opensky_data():
-    fetch_opensky_data()
 
 if POPULATE:
     populate_board()
 
 if __name__ == '__main__':
-    scheduler.start()
     app.run(debug=True)
