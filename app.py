@@ -32,7 +32,7 @@ app = Flask(__name__, static_url_path='/static')
 app.secret_key = secret_key
 
 app.config['SESSION_COOKIE_SECURE'] = True
-
+csrf = CSRFProtect(app)
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 login_manager = LoginManager(app)
