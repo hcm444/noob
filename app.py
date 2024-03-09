@@ -30,7 +30,7 @@ secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 
 app = Flask(__name__, static_url_path='/static')
-CORS(app)
+CORS(app, origins=["ttps://stingray-app-85uqm.ondigitalocean.app"], supports_credentials=True)
 app.secret_key = secret_key
 all_opensky_data = []
 fetch_interval_seconds = 120  # Adjust the interval as needed
