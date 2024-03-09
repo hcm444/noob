@@ -119,7 +119,6 @@ def get_latest_data():
         return jsonify({'states': opensky_data})
     else:
         return jsonify({})
-        print("error")
 
 @app.route('/map')
 def map():
@@ -687,4 +686,4 @@ if POPULATE:
 if __name__ == '__main__':
     fetch_thread = threading.Thread(target=fetch_opensky_data_thread, daemon=True)
     fetch_thread.start()
-    app.run(debug=True)
+    app.run(debug=False)
