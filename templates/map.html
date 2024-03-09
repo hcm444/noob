@@ -82,21 +82,6 @@
 
         function fetchData() {
 
-    $.ajax({
-        // ... other AJAX settings ...
-        success: function (data) {
-            if (data && data.states) {
-                // Proceed with processing data.states
-                console.log(data.states);
-            } else {
-                console.error('Error: data.states is undefined');
-            }
-        },
-        error: function (xhr, status, error) {
-            console.error('Error fetching data:', error);
-        }
-    });
-
             $.getJSON('/get_latest_data', function (data) {
                 var stillhere = {};
                 for (var j = 0; j < data.states.length; j++) {
