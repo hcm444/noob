@@ -29,10 +29,6 @@ secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
 
-all_opensky_data = []
-fetch_interval_seconds = 60  # Adjust the interval as needed
-fetch_opensky_data_lock = threading.Lock()
-
 app.secret_key = secret_key
 
 
@@ -69,6 +65,7 @@ POP_MAX = 100
 POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
+
 ENLARGE_FACTOR = 40
 MAX_CHAR = 500
 IMAGE_GEN_TIME = 60
@@ -84,46 +81,6 @@ message_board = []
 post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
-
-def get_all_opensky_data(username, password):
-    url = "https://opensky-network.org/api/states/all"
-    auth = (username, password)
-
-    try:
-        response = requests.get(url, auth=auth)
-        response.raise_for_status()
-        data = response.json()
-        return data
-    except requests.exceptions.RequestException as e:
-        print(f"Error occurred while fetching OpenSky data: {e}")
-        return None
-
-def store_opensky_data(data):
-    with fetch_opensky_data_lock:
-        if data is not None:
-            all_opensky_data.clear()
-            all_opensky_data.extend(data['states'])
-
-def fetch_opensky_data_thread():
-    while True:
-        username = "washoe.heli"
-        password = "B0r3alB0r3al"
-        opensky_data = get_all_opensky_data(username, password)
-        store_opensky_data(opensky_data)
-        time.sleep(fetch_interval_seconds)
-
-@app.route('/get_latest_data', methods=['GET'])
-def get_latest_data():
-    opensky_data = all_opensky_data
-    if opensky_data:
-        return jsonify({'states': opensky_data})
-    else:
-        return jsonify({})
-
-@app.route('/map')
-def map():
-    opensky_data = all_opensky_data
-    return render_template('map.html', opensky_data=opensky_data)
 
 def populate_board():
     global message_board, post_counter
@@ -684,6 +641,4 @@ if POPULATE:
     populate_board()
 
 if __name__ == '__main__':
-    fetch_thread = threading.Thread(target=fetch_opensky_data_thread, daemon=True)
-    fetch_thread.start()
-    app.run(debug=False)
+    app.run(debug=True)
