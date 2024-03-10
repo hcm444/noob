@@ -45,15 +45,18 @@ fetch_opensky_data_lock = threading.Lock()
 
 @app.route('/api2', methods=['POST'])
 @csrf.exempt
+#this is the only route that needs to be exempt
 def receive_opensky_data():
-    opensky_data = request.json
+    try:
+        opensky_data = request.json
+        with fetch_opensky_data_lock:
+            all_opensky_data.clear()
+            all_opensky_data.extend(opensky_data['states'])
+        return jsonify({'message': 'Data received successfully'}), 200
+    except:
+        return jsonify({'message': 'Error receiving data'})
 
-    with fetch_opensky_data_lock:
-        all_opensky_data.clear()
-        all_opensky_data.extend(opensky_data['states'])
-    return jsonify({'message': 'Data received successfully'}), 200
 @app.route('/api2')
-#@csrf.exempt
 def api2_data():
     with fetch_opensky_data_lock:
         formatted_data = []
