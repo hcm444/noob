@@ -102,7 +102,7 @@
                     var latitude = plane.latitude;
                     var longitude = plane.longitude;
                     var heading = plane.heading;
-                    if (Planes[icao24]) {
+                    if (Planes[icao24] || Planes[callsign]) {
                         var myplane = Planes[icao24];
                         marker = myplane.marker;
                         marker.setLatLng([latitude, longitude]);
