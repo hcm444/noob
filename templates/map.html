@@ -8,14 +8,25 @@
         crossorigin="" />
     <style type="text/css">
         #table-container {
-    overflow-y: auto;
-    max-height: 40%; /* Set a maximum height for the table container */
-}
+            overflow-y: auto;
+            max-height: 40%;
+        }
+
         html { height: 100% }
         body { height: 100%; margin: 0; padding: 0 }
         .plane-icon { padding:0px; margin:0px; }
         #map_canvas { height: 100% }
-        #info { position: absolute; width:20%; height:100%; bottom:0px; right:0px; top:0px; background-color: white; border-left:1px #666 solid; font-family:Helvetica; }
+        #info {
+            position: absolute;
+            width:20%;
+            height:100%;
+            bottom:0px;
+            right:0px;
+            top:0px;
+            background-color: white;
+            border-left:1px #666 solid;
+            font-family:Helvetica;
+        }
         #info div { padding:0px; padding-left:10px; margin:0px; }
         #info div h1 { margin-top:10px; font-size:16px; }
         #info div p { font-size:14px; color:#333; }
@@ -31,21 +42,21 @@
         var Selected = null;
 
         function getIconForPlane(plane) {
-    var triangleSize = 20;
-    var rotation = plane.heading || 0;  // Use heading if available, default to 0 if not
-    var triangleHtml = '<svg height="' + triangleSize +
-        '" width="' + triangleSize +
-        '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(' + rotation + 'deg);">';
-    triangleHtml += '<path d="M12 2 L20 21 L12 17 L4 21 Z"></path>';
-    triangleHtml += '</svg>';
-    var icon = L.divIcon({
-        html: triangleHtml,
-        className: 'plane-icon',
-        iconSize: [triangleSize, triangleSize],
-        iconAnchor: [triangleSize / 2, triangleSize / 2],
-    });
-    return icon;
-}
+            var triangleSize = 20;
+            var rotation = plane.heading || 0;  // Use heading if available, default to 0 if not
+            var triangleHtml = '<svg height="' + triangleSize +
+                '" width="' + triangleSize +
+                '" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="red" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate(' + rotation + 'deg);">';
+            triangleHtml += '<path d="M12 2 L20 21 L12 17 L4 21 Z"></path>';
+            triangleHtml += '</svg>';
+            var icon = L.divIcon({
+                html: triangleHtml,
+                className: 'plane-icon',
+                iconSize: [triangleSize, triangleSize],
+                iconAnchor: [triangleSize / 2, triangleSize / 2],
+            });
+            return icon;
+        }
 
         function selectPlane(planehex) {
             if (!Planes[planehex]) return;
@@ -59,54 +70,57 @@
         }
 
         function selectPlaneCallback(hex) {
-    return function () {
-        if (Selected === hex) {
-            // Deselect the plane if it's already selected
-            Selected = null;
-            refreshSelectedInfo();  // Update the info panel
-        } else {
-            // Select the clicked plane
-            Selected = hex;
-            refreshSelectedInfo();  // Update the info panel
-        }
+            return function () {
+                if (Selected === hex) {
+                    // Deselect the plane if it's already selected
+                    Selected = null;
+                    refreshSelectedInfo();  // Update the info panel
+                } else {
+                    // Select the clicked plane
+                    Selected = hex;
+                    refreshSelectedInfo();  // Update the info panel
+                }
 
-        // Update the markers to reflect the selection
-        for (var planeHex in Planes) {
-            var plane = Planes[planeHex];
-            plane.marker.setIcon(getIconForPlane(plane));
+                // Update the markers to reflect the selection
+                for (var planeHex in Planes) {
+                    var plane = Planes[planeHex];
+                    plane.marker.setIcon(getIconForPlane(plane));
+                }
+            };
         }
-    };
-}
 
         function refreshSelectedInfo() {
-    var i = document.getElementById('selinfo');
-    var p = Planes[Selected];
-    var tableBody = document.getElementById('plane-table-body');
+            var i = document.getElementById('selinfo');
+            var p = Planes[Selected];
+            var tableBody = document.getElementById('plane-table-body');
 
-    if (!p) {
-        tableBody.innerHTML = ''; // Clear the table if no aircraft is selected
-        return;
-    }
+            if (!p) {
+                tableBody.innerHTML = ''; // Clear the table if no aircraft is selected
+                return;
+            }
 
-    var html = '<tr>' +
-        '<td>' + p.icao24 + '</td>' +
-        '<td>' + p.callsign + '</td>' +
-        '<td>' + p.altitude + ' feet</td>' +
-        '<td>' + p.speed + ' knots</td>' +
-        '<td>' + p.latitude + ', ' + p.longitude + '</td>' +
-        '</tr>';
+            var tableContent = '<tr>' +
+                '<td>' + p.icao24 + '</td>' +
+                '<td>' + p.callsign + '</td>' +
+                '<td>' + p.altitude + ' feet</td>' +
+                '<td>' + p.speed + ' knots</td>' +
+                '<td>' + p.latitude + ', ' + p.longitude + '</td>' +
+                '</tr>';
 
-    tableBody.innerHTML = html;
-    i.innerHTML = 'ICAO: ' + p.icao24; // Update the selected info at the top
-}
+            tableBody.innerHTML = tableContent;
+            i.innerHTML = 'ICAO: ' + p.icao24; // Update the selected info at the top
+        }
 
         function fetchData() {
             $.getJSON('/api2', function (data) {
                 var stillhere = {};
+                var tableBody = document.getElementById('plane-table-body');
+                var tableContent = '';
+
                 for (var j = 0; j < data.length; j++) {
                     var plane = data[j];
-                    var marker = null;
                     stillhere[plane.icao24] = true;
+                    var marker = null;
                     var icao24 = plane.icao24;
                     var callsign = plane.callsign;
                     var altitude = plane.altitude;
@@ -158,10 +172,24 @@
                             marker: marker
                         };
                     }
-                }
-                NumPlanes = stillhere.length;
-refreshGeneralInfo();  // Update the count display
 
+                    // Append information to the table content
+                    tableContent += '<tr>' +
+                        '<td>' + icao24 + '</td>' +
+                        '<td>' + callsign + '</td>' +
+                        '<td>' + altitude + ' feet</td>' +
+                        '<td>' + speed + ' knots</td>' +
+                        '<td>' + latitude + ', ' + longitude + '</td>' +
+                        '</tr>';
+                }
+
+                // Update the entire table body
+                tableBody.innerHTML = tableContent;
+
+                NumPlanes = Object.keys(stillhere).length;
+                refreshGeneralInfo();
+
+                // Remove planes that are no longer present
                 for (var p in Planes) {
                     if (!stillhere[p]) {
                         Map.removeLayer(Planes[p].marker);
@@ -170,10 +198,12 @@ refreshGeneralInfo();  // Update the count display
                 }
             });
         }
+
         function refreshGeneralInfo() {
-    var i = document.getElementById('geninfo');
-    i.innerHTML = NumPlanes + ' aircraft on screen.';
-}
+            var i = document.getElementById('geninfo');
+            i.innerHTML = NumPlanes + ' aircraft on screen.';
+        }
+
         function initialize() {
             Map = L.map('map_canvas').setView([37.0, 13.0], 3);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -182,6 +212,7 @@ refreshGeneralInfo();  // Update the count display
                 id: 'mapbox/streets-v11',
                 accessToken: 'your.mapbox.access.token'
             }).addTo(Map);
+
             window.setInterval(function () {
                 fetchData();
                 refreshGeneralInfo();
@@ -218,6 +249,5 @@ refreshGeneralInfo();  // Update the count display
         </div>
     </div>
 </body>
-
 
 </html>
