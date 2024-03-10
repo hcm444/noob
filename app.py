@@ -69,7 +69,6 @@ def api2_data():
             })
         return jsonify(formatted_data)
 @app.route('/map')
-@csrf.exempt
 def map():
     return render_template('map.html')
 
