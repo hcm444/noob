@@ -7,6 +7,10 @@
         integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
         crossorigin="" />
     <style type="text/css">
+        #table-container {
+    overflow-y: auto;
+    max-height: 40%; /* Set a maximum height for the table container */
+}
         html { height: 100% }
         body { height: 100%; margin: 0; padding: 0 }
         .plane-icon { padding:0px; margin:0px; }
@@ -75,18 +79,26 @@
 }
 
         function refreshSelectedInfo() {
-            var i = document.getElementById('selinfo');
-            var p = Planes[Selected];
-            if (!p) return;
-            var html = 'ICAO: ' + p.icao24 + '<br>';
-            if (p.callsign.length) {
-                html += '<b>' + p.callsign + '</b><br>';
-            }
-            html += 'Altitude: ' + p.altitude + ' feet<br>';
-            html += 'Speed: ' + p.speed + ' knots<br>';
-            html += 'Coordinates: ' + p.latitude + ', ' + p.longitude + '<br>';
-            i.innerHTML = html;
-        }
+    var i = document.getElementById('selinfo');
+    var p = Planes[Selected];
+    var tableBody = document.getElementById('plane-table-body');
+
+    if (!p) {
+        tableBody.innerHTML = ''; // Clear the table if no aircraft is selected
+        return;
+    }
+
+    var html = '<tr>' +
+        '<td>' + p.icao24 + '</td>' +
+        '<td>' + p.callsign + '</td>' +
+        '<td>' + p.altitude + ' feet</td>' +
+        '<td>' + p.speed + ' knots</td>' +
+        '<td>' + p.latitude + ', ' + p.longitude + '</td>' +
+        '</tr>';
+
+    tableBody.innerHTML = html;
+    i.innerHTML = 'ICAO: ' + p.icao24; // Update the selected info at the top
+}
 
         function fetchData() {
             $.getJSON('/api2', function (data) {
@@ -179,14 +191,33 @@ refreshGeneralInfo();  // Update the count display
 </head>
 
 <body onload="initialize()">
-    <div id="map_canvas" style="width:80%; height:100%"></div>
+    <div id="map_canvas" style="width:80%; height:60%"></div>
     <div id="info">
         <div>
+            <h1>noob.lat</h1>
             <h1>Dump1090</h1>
             <p id="geninfo"></p>
             <p id="selinfo">Click on a plane for info.</p>
+            <!-- Add a scrollable table for displaying aircraft information -->
+            <div id="table-container">
+                <table id="plane-table">
+                    <thead>
+                        <tr>
+                            <th>ICAO</th>
+                            <th>Callsign</th>
+                            <th>Altitude</th>
+                            <th>Speed</th>
+                            <th>Coordinates</th>
+                        </tr>
+                    </thead>
+                    <tbody id="plane-table-body">
+                        <!-- Aircraft information will be dynamically added here -->
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </body>
+
 
 </html>
