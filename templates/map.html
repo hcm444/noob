@@ -89,75 +89,76 @@
         }
 
         function fetchData() {
-            $.getJSON('/api2', function (data) {
-                var stillhere = {};
-                for (var j = 0; j < data.length; j++) {
-                    var plane = data[j];
-                    var marker = null;
-                    stillhere[plane.icao24] = true;
-                    var icao24 = plane.icao24;
-                    var callsign = plane.callsign;
-                    var altitude = plane.altitude;
-                    var speed = plane.speed;
-                    var latitude = plane.latitude;
-                    var longitude = plane.longitude;
-                    var heading = plane.heading;
-                    if (Planes[icao24] || Planes[callsign]) {
-                        var myplane = Planes[icao24];
-                        marker = myplane.marker;
-                        marker.setLatLng([latitude, longitude]);
-                        marker.setIcon(getIconForPlane({
-                            icao24: icao24,
-                            altitude: altitude,
-                            speed: speed,
-                            latitude: latitude,
-                            longitude: longitude,
-                            heading: heading,
-                            callsign: callsign
-                        }));
-                        myplane.altitude = altitude;
-                        myplane.speed = speed;
-                        myplane.latitude = latitude;
-                        myplane.longitude = longitude;
-                        myplane.heading = heading;
-                        myplane.callsign = callsign;
-                        if (myplane.icao24 == Selected)
-                            refreshSelectedInfo();
-                    } else {
-                        var icon = getIconForPlane({
-                            icao24: icao24,
-                            altitude: altitude,
-                            speed: speed,
-                            latitude: latitude,
-                            longitude: longitude,
-                            heading: heading,
-                            callsign: callsign
-                        });
-                        marker = L.marker([latitude, longitude], { icon: icon }).addTo(Map);
-                        marker.on('click', selectPlaneCallback(icao24));
-                        Planes[icao24] = {
-                            icao24: icao24,
-                            altitude: altitude,
-                            speed: speed,
-                            latitude: latitude,
-                            longitude: longitude,
-                            heading: heading,
-                            callsign: callsign,
-                            marker: marker
-                        };
-                    }
-                }
-                NumPlanes = stillhere.length;
-refreshGeneralInfo();  // Update the count display
+    $.getJSON('/api2', function (data) {
+        var stillhere = {};
 
-                for (var p in Planes) {
-                    if (!stillhere[p]) {
-                        Map.removeLayer(Planes[p].marker);
-                        delete Planes[p];
-                    }
-                }
+        for (var j = 0; j < data.length; j++) {
+            var plane = data[j];
+            var marker = null;
+            stillhere[plane.icao24] = true;
+
+            var icao24 = plane.icao24;
+            var callsign = plane.callsign;
+            var altitude = plane.altitude;
+            var speed = plane.speed;
+            var latitude = plane.latitude;
+            var longitude = plane.longitude;
+            var heading = plane.heading;
+
+            var icon = getIconForPlane({
+                icao24: icao24,
+                altitude: altitude,
+                speed: speed,
+                latitude: latitude,
+                longitude: longitude,
+                heading: heading,
+                callsign: callsign
             });
+
+            if (Planes[icao24] || Planes[callsign]) {
+                var myplane = Planes[icao24];
+                marker = myplane.marker;
+                marker.setLatLng([latitude, longitude]);
+                marker.setIcon(icon);
+
+                myplane.altitude = altitude;
+                myplane.speed = speed;
+                myplane.latitude = latitude;
+                myplane.longitude = longitude;
+                myplane.heading = heading;
+                myplane.callsign = callsign;
+
+                if (myplane.icao24 == Selected) {
+                    refreshSelectedInfo();
+                }
+            } else {
+                marker = L.marker([latitude, longitude], { icon: icon }).addTo(Map);
+                marker.on('click', selectPlaneCallback(icao24));
+
+                Planes[icao24] = {
+                    icao24: icao24,
+                    altitude: altitude,
+                    speed: speed,
+                    latitude: latitude,
+                    longitude: longitude,
+                    heading: heading,
+                    callsign: callsign,
+                    marker: marker
+                };
+            }
         }
+
+        NumPlanes = Object.keys(stillhere).length;
+        refreshGeneralInfo();
+
+        for (var p in Planes) {
+            if (!stillhere[p]) {
+                Map.removeLayer(Planes[p].marker);
+                delete Planes[p];
+            }
+        }
+    });
+}
         function refreshGeneralInfo() {
     var i = document.getElementById('geninfo');
     i.innerHTML = NumPlanes + ' aircraft on screen.';
