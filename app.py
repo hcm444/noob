@@ -17,7 +17,7 @@ from io import BytesIO
 import json
 from captcha import generate_captcha_image
 from flask import Flask, render_template, request
-from flask_wtf.csrf import CSRFProtect
+from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
@@ -32,8 +32,9 @@ app = Flask(__name__, static_url_path='/static')
 app.secret_key = secret_key
 
 app.config['SESSION_COOKIE_SECURE'] = True
+
 csrf = CSRFProtect(app)
-csrf.exempt('/api2')
+
 cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 login_manager = LoginManager(app)
@@ -43,6 +44,7 @@ all_opensky_data = []
 fetch_opensky_data_lock = threading.Lock()
 
 @app.route('/api2', methods=['POST'])
+@csrf.exempt
 def receive_opensky_data():
     opensky_data = request.json
 
@@ -51,6 +53,7 @@ def receive_opensky_data():
         all_opensky_data.extend(opensky_data['states'])
     return jsonify({'message': 'Data received successfully'}), 200
 @app.route('/api2')
+@csrf.exempt
 def api2_data():
     with fetch_opensky_data_lock:
         formatted_data = []
@@ -66,12 +69,16 @@ def api2_data():
             })
         return jsonify(formatted_data)
 @app.route('/map')
+@csrf.exempt
 def map():
     return render_template('map.html')
 
 class User(UserMixin):
     pass
 
+@app.errorhandler(CSRFError)
+def handle_csrf_error(e):
+    return jsonify({'error': 'CSRF token is missing or invalid'}), 401
 
 @login_manager.user_loader
 def load_user(user_id):

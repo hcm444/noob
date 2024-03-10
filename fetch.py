@@ -30,8 +30,8 @@ def send_opensky_data_to_flask(data):
 
 
 if __name__ == "__main__":
-    username = "Henrymou"
-    password = "difzo7-jonmyq-fenFan"
+    username = "washoe.heli"
+    password = "B0r3alB0r3al"
 
     while True:
         opensky_data = fetch_opensky_data(username, password)
