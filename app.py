@@ -6,9 +6,6 @@ import random
 from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
-import colorsys
-from flask_cors import CORS
-import requests
 import time
 from flask import jsonify, session, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
@@ -21,10 +18,15 @@ from flask_wtf.csrf import CSRFProtect, CSRFError
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 import secrets
-import sqlite3
-from flask_apscheduler import APScheduler  # Add this import
+
+from distinct_colors import generate_distinct_colors
+from find_by_number import find_post_by_number
+from load_highest import load_highest_post_count
+from message_exists import message_exists_in_post
+from save_highest import save_highest_post_count
 from tripcode import generate_tripcode
 import logging
+
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
 app = Flask(__name__, static_url_path='/static')
@@ -43,9 +45,10 @@ login_manager.login_view = 'login'
 all_opensky_data = []
 fetch_opensky_data_lock = threading.Lock()
 
+
 @app.route('/api2', methods=['POST'])
 @csrf.exempt
-#this is the only route that needs to be exempt
+# this is the only route that needs to be exempt
 def receive_opensky_data():
     try:
         opensky_data = request.json
@@ -55,6 +58,7 @@ def receive_opensky_data():
         return jsonify({'message': 'Data received successfully'}), 200
     except:
         return jsonify({'message': 'Error receiving data'})
+
 
 @app.route('/api2')
 def api2_data():
@@ -71,16 +75,21 @@ def api2_data():
                 'heading': plane[10]
             })
         return jsonify(formatted_data)
+
+
 @app.route('/map')
 def map():
     return render_template('map.html')
 
+
 class User(UserMixin):
     pass
+
 
 @app.errorhandler(CSRFError)
 def handle_csrf_error(e):
     return jsonify({'error': 'CSRF token is missing or invalid'}), 401
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -95,13 +104,12 @@ class MyLoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
-
 with open('config.json') as f:
     config = json.load(f)
 POPULATE_RANGE = 400
 POP_MIN = 0
 POP_MAX = 100
-POPULATE = 0  # Set to 1 to enable automatic population, 0 to disable
+POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
 
@@ -121,8 +129,6 @@ message_board = []
 post_counts = {}
 
 logging.basicConfig(level=logging.DEBUG)
-
-
 
 
 def populate_board():
@@ -185,46 +191,7 @@ def generate_black_image(message_board):
     return black_image, slices
 
 
-def load_highest_post_count():
-    try:
-        connection = sqlite3.connect('post_count.db')  # Change the database name as needed
-        cursor = connection.cursor()
-        cursor.execute('CREATE TABLE IF NOT EXISTS post_count (count INTEGER)')
-        cursor.execute('SELECT * FROM post_count')
-        result = cursor.fetchone()
-        return result[0] if result else 1  # Default value if no record is found
-    except sqlite3.Error as e:
-        print(f"SQLite error: {e}")
-        return 1  # Default value if an error occurs
-    finally:
-        connection.close()
-
-
 post_counter = load_highest_post_count()
-
-
-def save_highest_post_count(post_count):
-    try:
-        connection = sqlite3.connect('post_count.db')
-        cursor = connection.cursor()
-        cursor.execute('CREATE TABLE IF NOT EXISTS post_count (count INTEGER)')
-
-        # Check if a record exists
-        cursor.execute('SELECT * FROM post_count')
-        result = cursor.fetchone()
-
-        if result:
-            # Update the existing record
-            cursor.execute('UPDATE post_count SET count = ?', (post_count,))
-        else:
-            # Insert a new record
-            cursor.execute('INSERT INTO post_count (count) VALUES (?)', (post_count,))
-
-        connection.commit()
-    except sqlite3.Error as e:
-        print(f"SQLite error: {e}")
-    finally:
-        connection.close()
 
 
 def has_too_many_repeating_characters(message):
@@ -273,18 +240,6 @@ def replace_characters():
         return "Characters replaced successfully."
     else:
         return "Post not found. Please enter a valid post number."
-
-
-def find_post_by_number(posts, post_number):
-    for post in posts:
-        if post['post_number'] == post_number:
-            return post
-        elif 'replies' in post:
-            # Search for the post in replies recursively
-            nested_post = find_post_by_number(post['replies'], post_number)
-            if nested_post:
-                return nested_post
-    return None
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -348,7 +303,6 @@ def add_ip_restriction():
     # Optionally, save the updated IP restrictions to a persistent storage
     return redirect(url_for('ip_restrictions'))
 
-
 @app.route('/remove_ip_restriction', methods=['POST'])
 @login_required
 def remove_ip_restriction():
@@ -356,7 +310,6 @@ def remove_ip_restriction():
     restricted_ips.discard(ip_to_remove)
     # Optionally, save the updated IP restrictions to a persistent storage
     return redirect(url_for('ip_restrictions'))
-
 
 @app.route('/catalog')
 def catalog():
@@ -373,7 +326,6 @@ def catalog():
         catalog_data.append(post_data)
 
     return render_template('catalog.html', catalog_data=catalog_data)
-
 
 @app.route('/thread/<int:post_number>')
 def thread(post_number):
@@ -445,15 +397,6 @@ def home():
 
 
 ip_post_counts = {}
-
-
-def message_exists_in_post(post, message):
-    if post['message'] == message:
-        return True
-    for reply in post.get('replies', []):
-        if message_exists_in_post(reply, message):
-            return True
-    return False
 
 
 @app.route('/post', methods=['POST'])
@@ -608,16 +551,6 @@ def api():
     return jsonify(posts_json)
 
 
-def generate_distinct_colors(num_colors):
-    colors = []
-    for i in range(num_colors):
-        # Calculate hue to traverse through red, orange, yellow, green, and blue
-        hue = (i / num_colors) * 0.6  # Vary the hue from 0 to 0.6 for a portion of the spectrum
-        rgb = colorsys.hsv_to_rgb(hue, 1, 1)
-        colors.append(tuple(int(c * 255) for c in rgb))
-    return colors
-
-
 color_palette = generate_distinct_colors(UNIQUE_COLORS)
 
 
@@ -678,7 +611,6 @@ def generate_message_board_image():
 
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
-
 
 if POPULATE:
     populate_board()
