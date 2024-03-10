@@ -101,7 +101,7 @@ with open('config.json') as f:
 POPULATE_RANGE = 400
 POP_MIN = 0
 POP_MAX = 100
-POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
+POPULATE = 0  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
 
