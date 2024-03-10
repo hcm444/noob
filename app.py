@@ -44,7 +44,7 @@ all_opensky_data = []
 fetch_opensky_data_lock = threading.Lock()
 
 @app.route('/api2', methods=['POST'])
-@csrf.exempt
+#@csrf.exempt
 def receive_opensky_data():
     opensky_data = request.json
 
