@@ -674,9 +674,11 @@ def assign_color(activity_level):
     index = int(normalized_activity * max_activity)
     return color_palette[index]
 
-
+terminate_thread = False
 def generate_message_board_image():
-    while True:
+    global terminate_thread
+
+    while not terminate_thread:
         image_width = POSTS_PER_PAGE
         image_height = MAX_PARENT_POSTS // POSTS_PER_PAGE
 
@@ -705,6 +707,8 @@ def generate_message_board_image():
 
             x_enlarged = (i % POSTS_PER_PAGE) * ENLARGE_FACTOR
             y_enlarged = (i // POSTS_PER_PAGE) * ENLARGE_FACTOR
+
+
 
             for y_offset in range(ENLARGE_FACTOR):
                 for x_offset in range(ENLARGE_FACTOR):
