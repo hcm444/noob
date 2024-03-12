@@ -3,22 +3,25 @@ from datetime import datetime, timedelta
 import re
 import lorem
 import random
+
+from flask_bcrypt import generate_password_hash, check_password_hash
 from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
 import time
-from flask import jsonify, session, redirect, url_for
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from wtforms.fields.simple import PasswordField
+from flask import jsonify, session
+from flask_login import LoginManager, login_user, logout_user
+
 from io import BytesIO
 import json
-from captcha import generate_captcha_image
-from flask import Flask, render_template, request
-from flask_wtf.csrf import CSRFProtect, CSRFError
-from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField
-import secrets
 
+
+from captcha import generate_captcha_image
+
+from flask_wtf.csrf import CSRFProtect, CSRFError
+
+import secrets
+from flask_login import login_required
 from distinct_colors import generate_distinct_colors
 from find_by_number import find_post_by_number
 from load_highest import load_highest_post_count
@@ -26,10 +29,21 @@ from message_exists import message_exists_in_post
 from save_highest import save_highest_post_count
 from tripcode import generate_tripcode
 import logging
+from flask_login import current_user
 
 secret_key = secrets.token_hex(32)
 post_counts_lock = threading.Lock()
-app = Flask(__name__, static_url_path='/static')
+
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask import Flask, render_template, request, redirect, url_for
+from wtforms import StringField, PasswordField, SubmitField
+from wtforms.validators import DataRequired, Length, Regexp, Email
+from flask_wtf import FlaskForm
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Update with your desired database URI
+db = SQLAlchemy(app)
 
 app.secret_key = secret_key
 
@@ -44,7 +58,31 @@ login_manager.login_view = 'login'
 
 all_opensky_data = []
 fetch_opensky_data_lock = threading.Lock()
+@app.after_request
+def add_header(response):
+    response.cache_control.no_store = True
+    return response
+@app.route('/admin_login', methods=['GET', 'POST'])
+@login_required
+def admin_login():
+    form = MyLoginForm()
 
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        # Replace this with your actual authentication logic
+        user = User.query.filter_by(username=username).first()
+
+        # Check if the user is an admin
+        if user and user.check_password(password) and user.username == 'admin':
+            login_user(user)
+            return redirect(url_for('admin_dashboard'))
+
+        session['error_message'] = 'Invalid username or password'
+        return redirect(url_for('admin_login'))
+
+    return render_template('admin_login.html', form=form)
 
 @app.route('/api2', methods=['POST'])
 @csrf.exempt
@@ -61,6 +99,7 @@ def receive_opensky_data():
 
 
 @app.route('/api2')
+@login_required
 def api2_data():
     with fetch_opensky_data_lock:
         formatted_data = []
@@ -78,24 +117,42 @@ def api2_data():
 
 
 @app.route('/map')
+@login_required
 def map():
     return render_template('map.html')
 
 
-class User(UserMixin):
-    pass
+class User(db.Model, UserMixin):
+    __tablename__ = 'user'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(20), unique=True, nullable=False)
+    hashed_password = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(128), nullable=False)
+
+    def set_password(self, password):
+        self.hashed_password = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.hashed_password, password)
+
 
 
 @app.errorhandler(CSRFError)
+@login_required
 def handle_csrf_error(e):
     return jsonify({'error': 'CSRF token is missing or invalid'}), 401
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    user = User()
-    user.id = user_id
-    return user
+    return User.query.get(int(user_id))
+
+def verify_password(username, password):
+    user = User.query.filter_by(username=username).first()
+    if user:
+        return user.check_password(password)
+    return False
+
 
 
 class MyLoginForm(FlaskForm):
@@ -217,6 +274,23 @@ def parse_references(message):
         references.append(referenced_post_number)
     return references
 
+class RegistrationForm(FlaskForm):
+    username = StringField('Username', validators=[
+        DataRequired(message='Username is required.'),
+        Length(min=8, message='Username must be at least 8 characters long.')
+    ])
+    password = PasswordField('Password', validators=[
+        DataRequired(message='Password is required.'),
+        Length(min=8, message='Password must be at least 8 characters long.'),
+        Regexp('^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]',
+               message='Password must include uppercase, lowercase, digit, and special character.')
+    ])
+    email = StringField('Email', validators=[
+        DataRequired(message='Email is required.'),
+        Email(message='Invalid email address.')
+    ])
+    submit = SubmitField('Register')
+
 
 @app.route('/replace_characters', methods=['POST'])
 @login_required
@@ -241,26 +315,52 @@ def replace_characters():
     else:
         return "Post not found. Please enter a valid post number."
 
+# Update user registration route
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
 
+    if form.validate_on_submit():  # Ensure validate_on_submit() is called
+        username = form.username.data
+        password = form.password.data
+        email = form.email.data
+        # Hash the password before storing it
+        hashed_password = generate_password_hash(password)
+        hashed_email = generate_password_hash(email)
+
+        # Save the user to the database using SQLAlchemy
+        user = User(username=username, hashed_password=hashed_password, email=hashed_email)
+        db.session.add(user)
+        db.session.commit()
+
+        session['error_message'] = 'Registration successful. Please log in.'
+        return redirect(url_for('login'))
+
+    # If not submitted or validation failed, errors will be displayed in the template
+    return render_template('register.html', form=form)
+
+# Update login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    form = MyLoginForm()  # Create an instance of the login form
+    form = MyLoginForm()
 
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
 
         # Replace this with your actual authentication logic
-        if username == USERNAME and password == PASSWORD:
-            user = User()
-            user.id = username
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
             login_user(user)
-            return redirect(url_for('admin_dashboard'))
+            return redirect(url_for('home'))
 
         session['error_message'] = 'Invalid username or password'
         return redirect(url_for('login'))
 
-    return render_template('login.html', form=form)  # Pass the form to the template
+    return render_template('login.html', form=form)
+
+
+
 
 
 # Admin dashboard route
@@ -268,8 +368,11 @@ def login():
 @app.route('/admin_dashboard')
 @login_required
 def admin_dashboard():
+    if current_user.username != 'admin':
+        return redirect(url_for('admin_login'))
+
     form = MyLoginForm()  # Instantiate the form
-    return render_template('admin_dashboard.html', username=current_user.id, form=form, message_board=message_board)
+    return render_template('admin_dashboard.html', username=current_user.username, form=form, message_board=message_board)
 
 
 # Logout route
@@ -312,6 +415,7 @@ def remove_ip_restriction():
     return redirect(url_for('ip_restrictions'))
 
 @app.route('/catalog')
+@login_required
 def catalog():
     catalog_data = []
     for post in message_board:
@@ -328,6 +432,7 @@ def catalog():
     return render_template('catalog.html', catalog_data=catalog_data)
 
 @app.route('/thread/<int:post_number>')
+@login_required
 def thread(post_number):
     # In the 'thread' route function
     post = next((p for p in message_board if p['post_number'] == post_number), None)
@@ -338,17 +443,24 @@ def thread(post_number):
 
 
 @app.errorhandler(404)
+@login_required
 def page_not_found(e):
     return render_template('404.html', error='404 - Page not found'), 404
 
+@app.route('/')
+def login_page():
+    form = MyLoginForm()  # Instantiate the login form
+    return render_template('login.html', form=form)
 
 @app.route('/snake')
+@login_required
 def snake():
     return render_template('snake.html')
 
 
 # In the home route
-@app.route('/')
+@app.route('/forum')
+@login_required
 def home():
     captcha_code, captcha_image = generate_captcha_image()
     session['captcha'] = captcha_code
@@ -383,7 +495,7 @@ def home():
 
     # Pass both messages, color information, and captcha to the template
     return render_template(
-        'index.html',
+        'forum.html',
         messages=messages_to_display,
         total_pages=total_pages,
         current_page=page,
@@ -400,6 +512,7 @@ ip_post_counts = {}
 
 
 @app.route('/post', methods=['POST'])
+@login_required
 def post():
     csrf.protect()
     global post_counts, post_counter, ip_post_counts
@@ -484,7 +597,7 @@ def post():
                 'timestamp': timestamp,
                 'message': message,
                 'ip_address': ip_address,
-                'tripcode': tripcode,
+                'tripcode': current_user.username,
             }
             post_counter += 1
             parent_post.setdefault('replies', []).append(reply)
@@ -505,7 +618,7 @@ def post():
             'message': message,
             'replies': [],
             'ip_address': ip_address,
-            'tripcode': tripcode,  # Include the tripcode in the post information
+            'tripcode': current_user.username,  # Include the tripcode in the post information
         }
         post_counter += 1
         message_board.append(post)
@@ -519,6 +632,7 @@ def post():
 
 
 @app.route('/about')
+@login_required
 def about():
     return render_template('about.html')
 
@@ -616,4 +730,6 @@ if POPULATE:
     populate_board()
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     app.run(debug=True)

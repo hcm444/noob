@@ -1,43 +1,41 @@
-<!-- templates/login.html -->
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
-    <title>{% block title %}Noob{% endblock %}</title>
+    <title>Admin Login</title>
     <style>
         body {
-            background-color: #000;
-            color: #00FF00; /* #00FF00 text */
+            background-color: #330000; /* Dark red background */
+            color: #FF3333; /* Light red text */
             font-family: Arial, sans-serif;
             margin: 20px;
         }
 
         label {
-            color: #00FF00; /* #00FF00 label text color */
+            color: #FF3333; /* Light red label text color */
         }
 
         input {
-            background-color: #000; /* Dark input background */
-            color: #00FF00; /* #00FF00 input text color */
-            border: 1px solid #00FF00; /* #00FF00 border */
+            background-color: #330000; /* Dark red input background */
+            color: #FF3333; /* Light red input text color */
+            border: 1px solid #FF3333; /* Light red border */
             padding: 5px;
             margin-bottom: 10px;
         }
 
         button {
-            background-color: #000; /* Dark button background */
-            color: #00FF00; /* #00FF00 button text color */
-            border: 1px solid #00FF00; /* #00FF00 border */
+            background-color: #330000; /* Dark red button background */
+            color: #FF3333; /* Light red button text color */
+            border: 1px solid #FF3333; /* Light red border */
             padding: 8px;
             cursor: pointer;
         }
 
         button:hover {
-            background-color: #00FF00; /* #00FF00 button background on hover */
-            color: #000; /* Black button text color on hover */
+            background-color: #FF3333; /* Light red button background on hover */
+            color: #330000; /* Dark red button text color on hover */
         }
 
         p.error-message {
@@ -57,8 +55,8 @@
 <body>
     <div class="container">
         <main>
-            <h2>Login</h2>
-            <form method="post" action="{{ url_for('login') }}">
+            <h2>Admin Login</h2>
+            <form method="post" action="{{ url_for('admin_login') }}">
                 {{ form.csrf_token }}
                 <div class="form-group">
                     {{ form.username(class="form-control", placeholder="Enter your username", required="required") }}
@@ -73,7 +71,6 @@
             {% if session.get('error_message') %}
                 <p class="error-message">{{ session.pop('error_message') }}</p>
             {% endif %}
-            <p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
         </main>
     </div>
 </body>

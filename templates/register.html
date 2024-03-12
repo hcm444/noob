@@ -1,4 +1,4 @@
-<!-- templates/login.html -->
+<!-- templates/register.html -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
-    <title>{% block title %}Noob{% endblock %}</title>
+    <title>{% block title %}My Website{% endblock %}</title>
     <style>
         body {
             background-color: #000;
@@ -44,36 +44,51 @@
             color: red; /* Red error message text color */
         }
 
+        /* Add your own styles for the registration form */
         .container {
-            text-align: center;
             margin-top: 50px;
+        }
+
+        main {
+            text-align: center;
         }
 
         form {
             margin-top: 20px;
         }
+
+        /* Add more styles as needed for your registration form */
     </style>
 </head>
 <body>
     <div class="container">
         <main>
-            <h2>Login</h2>
-            <form method="post" action="{{ url_for('login') }}">
-                {{ form.csrf_token }}
+            <h2>Register</h2>
+            <form method="post" action="{{ url_for('register') }}">
+                {{ form.hidden_tag() }}
                 <div class="form-group">
                     {{ form.username(class="form-control", placeholder="Enter your username", required="required") }}
+                    {% if form.username.errors %}
+                        <p class="error-message">{{ form.username.errors[0] }}</p>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     {{ form.password(class="form-control", placeholder="Enter your password", required="required") }}
+                    {% if form.password.errors %}
+                        <p class="error-message">{{ form.password.errors[0] }}</p>
+                    {% endif %}
+                </div>
+                <div class="form-group">
+                    {{ form.email(class="form-control", placeholder="Enter your email", required="required") }}
+                    {% if form.email.errors %}
+                        <p class="error-message">{{ form.email.errors[0] }}</p>
+                    {% endif %}
                 </div>
                 <div class="form-group">
                     {{ form.submit(class="btn btn-primary") }}
                 </div>
             </form>
-            {% if session.get('error_message') %}
-                <p class="error-message">{{ session.pop('error_message') }}</p>
-            {% endif %}
-            <p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
+            <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
         </main>
     </div>
 </body>
