@@ -161,14 +161,12 @@ class MyLoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
-with open('config.json') as f:
-    config = json.load(f)
+
 POPULATE_RANGE = 400
 POP_MIN = 0
 POP_MAX = 100
 POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
-USERNAME = config.get('username')
-PASSWORD = config.get('password')
+
 
 OPENSKY_PING = 120
 ENLARGE_FACTOR = 40
