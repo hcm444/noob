@@ -131,6 +131,7 @@ class User(user_data_db.Model, UserMixin):
     hashed_password = user_data_db.Column(user_data_db.String(128), nullable=False)
     email = user_data_db.Column(user_data_db.String(128), nullable=False)
 
+
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
 
