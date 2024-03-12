@@ -67,7 +67,6 @@ def add_header(response):
 
 
 @app.route('/admin_login', methods=['GET', 'POST'])
-@login_required
 def admin_login():
     form = MyLoginForm()
 
@@ -104,7 +103,6 @@ def receive_opensky_data():
 
 
 @app.route('/api2')
-@login_required
 def api2_data():
     with fetch_opensky_data_lock:
         formatted_data = []
@@ -122,7 +120,6 @@ def api2_data():
 
 
 @app.route('/map')
-@login_required
 def map():
     return render_template('map.html')
 
