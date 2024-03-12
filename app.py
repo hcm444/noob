@@ -163,11 +163,10 @@ class MyLoginForm(FlaskForm):
 
 with open('config.json') as f:
     config = json.load(f)
-
 POPULATE_RANGE = 400
 POP_MIN = 0
 POP_MAX = 100
-POPULATE = 0  # Set to 1 to enable automatic population, 0 to disable
+POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 USERNAME = config.get('username')
 PASSWORD = config.get('password')
 
@@ -318,10 +317,8 @@ def replace_characters():
 
 # Update user registration route
 @app.route('/register', methods=['GET', 'POST'])
-@csrf.exempt
 def register():
     form = RegistrationForm()
-
 
     if form.validate_on_submit():  # Ensure validate_on_submit() is called
         username = form.username.data
