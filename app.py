@@ -43,7 +43,7 @@ from wtforms.validators import DataRequired, Length, Regexp, Email
 from flask_wtf import FlaskForm
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Update with your desired database URI
-db2 = SQLAlchemy(app)
+user_data_db = SQLAlchemy(app)
 
 
 app.secret_key = secret_key
@@ -123,12 +123,12 @@ def map():
     return render_template('map.html')
 
 
-class User(db2.Model, UserMixin):
+class User(user_data_db.Model, UserMixin):
     __tablename__ = 'user'
-    id = db2.Column(db2.Integer, primary_key=True)
-    username = db2.Column(db2.String(20), unique=True, nullable=False)
-    hashed_password = db2.Column(db2.String(128), nullable=False)
-    email = db2.Column(db2.String(128), nullable=False)
+    id = user_data_db.Column(user_data_db.Integer, primary_key=True)
+    username = user_data_db.Column(user_data_db.String(20), unique=True, nullable=False)
+    hashed_password = user_data_db.Column(user_data_db.String(128), nullable=False)
+    email = user_data_db.Column(user_data_db.String(128), nullable=False)
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
@@ -330,8 +330,8 @@ def register():
 
         # Save the user to the database using SQLAlchemy
         user = User(username=username, hashed_password=hashed_password, email=hashed_email)
-        db2.session.add(user)
-        db2.session.commit()
+        user_data_db.session.add(user)
+        user_data_db.session.commit()
 
         session['error_message'] = 'Registration successful. Please log in.'
         return redirect(url_for('login'))
@@ -730,13 +730,10 @@ def generate_message_board_image():
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
-
-
-
+if POPULATE:
+    populate_board()
 
 if __name__ == '__main__':
     with app.app_context():
-        db2.create_all()
-    if POPULATE:
-        populate_board()
+        user_data_db.create_all()
     app.run(debug=True)
