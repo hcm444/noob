@@ -15,7 +15,6 @@ from flask_login import LoginManager, login_user, logout_user
 from io import BytesIO
 import json
 
-
 from captcha import generate_captcha_image
 
 from flask_wtf.csrf import CSRFProtect, CSRFError
@@ -41,10 +40,10 @@ from flask import Flask, render_template, request, redirect, url_for
 from wtforms import StringField, PasswordField, SubmitField
 from wtforms.validators import DataRequired, Length, Regexp, Email
 from flask_wtf import FlaskForm
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Update with your desired database URI
 user_data_db = SQLAlchemy(app)
-
 
 app.secret_key = secret_key
 
@@ -59,10 +58,14 @@ login_manager.login_view = 'login'
 
 all_opensky_data = []
 fetch_opensky_data_lock = threading.Lock()
+
+
 @app.after_request
 def add_header(response):
     response.cache_control.no_store = True
     return response
+
+
 @app.route('/admin_login', methods=['GET', 'POST'])
 @login_required
 def admin_login():
@@ -84,6 +87,7 @@ def admin_login():
         return redirect(url_for('admin_login'))
 
     return render_template('admin_login.html', form=form)
+
 
 @app.route('/api2', methods=['POST'])
 @csrf.exempt
@@ -137,7 +141,6 @@ class User(user_data_db.Model, UserMixin):
         return check_password_hash(self.hashed_password, password)
 
 
-
 @app.errorhandler(CSRFError)
 @login_required
 def handle_csrf_error(e):
@@ -148,12 +151,12 @@ def handle_csrf_error(e):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+
 def verify_password(username, password):
     user = User.query.filter_by(username=username).first()
     if user:
         return user.check_password(password)
     return False
-
 
 
 class MyLoginForm(FlaskForm):
@@ -162,12 +165,10 @@ class MyLoginForm(FlaskForm):
     submit = SubmitField('Login')
 
 
-
 POPULATE_RANGE = 400
 POP_MIN = 0
 POP_MAX = 100
 POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
-
 
 OPENSKY_PING = 120
 ENLARGE_FACTOR = 40
@@ -273,6 +274,7 @@ def parse_references(message):
         references.append(referenced_post_number)
     return references
 
+
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[
         DataRequired(message='Username is required.'),
@@ -314,9 +316,9 @@ def replace_characters():
     else:
         return "Post not found. Please enter a valid post number."
 
+
 # Update user registration route
 @app.route('/register', methods=['GET', 'POST'])
-
 def register():
     form = RegistrationForm()
 
@@ -339,6 +341,7 @@ def register():
     # If not submitted or validation failed, errors will be displayed in the template
     return render_template('register.html', form=form)
 
+
 # Update login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -360,9 +363,6 @@ def login():
     return render_template('login.html', form=form)
 
 
-
-
-
 # Admin dashboard route
 
 @app.route('/admin_dashboard')
@@ -372,7 +372,8 @@ def admin_dashboard():
         return redirect(url_for('admin_login'))
 
     form = MyLoginForm()  # Instantiate the form
-    return render_template('admin_dashboard.html', username=current_user.username, form=form, message_board=message_board)
+    return render_template('admin_dashboard.html', username=current_user.username, form=form,
+                           message_board=message_board)
 
 
 # Logout route
@@ -406,6 +407,7 @@ def add_ip_restriction():
     # Optionally, save the updated IP restrictions to a persistent storage
     return redirect(url_for('ip_restrictions'))
 
+
 @app.route('/remove_ip_restriction', methods=['POST'])
 @login_required
 def remove_ip_restriction():
@@ -413,6 +415,7 @@ def remove_ip_restriction():
     restricted_ips.discard(ip_to_remove)
     # Optionally, save the updated IP restrictions to a persistent storage
     return redirect(url_for('ip_restrictions'))
+
 
 @app.route('/catalog')
 @login_required
@@ -431,6 +434,7 @@ def catalog():
 
     return render_template('catalog.html', catalog_data=catalog_data)
 
+
 @app.route('/thread/<int:post_number>')
 @login_required
 def thread(post_number):
@@ -447,10 +451,12 @@ def thread(post_number):
 def page_not_found(e):
     return render_template('404.html', error='404 - Page not found'), 404
 
+
 @app.route('/')
 def login_page():
     form = MyLoginForm()  # Instantiate the login form
     return render_template('login.html', form=form)
+
 
 @app.route('/snake')
 @login_required
@@ -674,7 +680,10 @@ def assign_color(activity_level):
     index = int(normalized_activity * max_activity)
     return color_palette[index]
 
+
 terminate_thread = False
+
+
 def generate_message_board_image():
     global terminate_thread
 
@@ -707,8 +716,6 @@ def generate_message_board_image():
 
             x_enlarged = (i % POSTS_PER_PAGE) * ENLARGE_FACTOR
             y_enlarged = (i // POSTS_PER_PAGE) * ENLARGE_FACTOR
-
-
 
             for y_offset in range(ENLARGE_FACTOR):
                 for x_offset in range(ENLARGE_FACTOR):
