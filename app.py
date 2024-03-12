@@ -45,6 +45,7 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Update with your desired database URI
 db = SQLAlchemy(app)
 
+
 app.secret_key = secret_key
 
 app.config['SESSION_COOKIE_SECURE'] = True
