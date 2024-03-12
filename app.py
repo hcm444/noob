@@ -165,7 +165,7 @@ class MyLoginForm(FlaskForm):
 POPULATE_RANGE = 400
 POP_MIN = 0
 POP_MAX = 100
-POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
+POPULATE = 0  # Set to 1 to enable automatic population, 0 to disable
 
 OPENSKY_PING = 120
 ENLARGE_FACTOR = 40
