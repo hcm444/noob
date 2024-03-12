@@ -317,6 +317,7 @@ def replace_characters():
 
 # Update user registration route
 @app.route('/register', methods=['GET', 'POST'])
+@csrf.exempt
 def register():
     form = RegistrationForm()
 
