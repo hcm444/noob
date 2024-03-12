@@ -43,7 +43,7 @@ from wtforms.validators import DataRequired, Length, Regexp, Email
 from flask_wtf import FlaskForm
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///site.db'  # Update with your desired database URI
-db = SQLAlchemy(app)
+db2 = SQLAlchemy(app)
 
 
 app.secret_key = secret_key
@@ -123,12 +123,12 @@ def map():
     return render_template('map.html')
 
 
-class User(db.Model, UserMixin):
+class User(db2.Model, UserMixin):
     __tablename__ = 'user'
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(20), unique=True, nullable=False)
-    hashed_password = db.Column(db.String(128), nullable=False)
-    email = db.Column(db.String(128), nullable=False)
+    id = db2.Column(db2.Integer, primary_key=True)
+    username = db2.Column(db2.String(20), unique=True, nullable=False)
+    hashed_password = db2.Column(db2.String(128), nullable=False)
+    email = db2.Column(db2.String(128), nullable=False)
 
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
@@ -316,6 +316,7 @@ def replace_characters():
 
 # Update user registration route
 @app.route('/register', methods=['GET', 'POST'])
+
 def register():
     form = RegistrationForm()
 
@@ -329,8 +330,8 @@ def register():
 
         # Save the user to the database using SQLAlchemy
         user = User(username=username, hashed_password=hashed_password, email=hashed_email)
-        db.session.add(user)
-        db.session.commit()
+        db2.session.add(user)
+        db2.session.commit()
 
         session['error_message'] = 'Registration successful. Please log in.'
         return redirect(url_for('login'))
@@ -725,10 +726,13 @@ def generate_message_board_image():
 image_generation_thread = threading.Thread(target=generate_message_board_image)
 image_generation_thread.start()
 
-if POPULATE:
-    populate_board()
+
+
+
 
 if __name__ == '__main__':
     with app.app_context():
-        db.create_all()
+        db2.create_all()
+    if POPULATE:
+        populate_board()
     app.run(debug=True)
