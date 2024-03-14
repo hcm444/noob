@@ -32,7 +32,13 @@
     left: 50%; /* Center horizontally */
     transform: translateX(-50%); /* Center horizontally */
 }
-
+/* Media query for smaller screens (e.g., mobile devices) */
+@media (max-width: 768px) {
+    .cube {
+        height: 20vh; /* Adjust the height for smaller screens */
+        bottom: 20px; /* Adjust the bottom position for smaller screens */
+    }
+}
         body {
             background-color: #000;
             color: #00FF00; /* #00FF00 text */

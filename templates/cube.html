@@ -28,6 +28,8 @@ body {
       animation: spin 5s linear infinite;
     }
 
+
+
     .face {
       position: absolute;
       width: 200px;
@@ -140,7 +142,7 @@ body {
     // Update cells periodically
     setInterval(() => {
       cells = updateCells(cells);
-      cells = addRandomCells(cells, 0.05); // Adjust the probability as needed
+      cells = addRandomCells(cells, 0.025); // Adjust the probability as needed
       displayCells(face, cells);
     }, 100); // Adjust the interval as needed
   });
