@@ -132,7 +132,6 @@ class User(user_data_db.Model, UserMixin):
     email = user_data_db.Column(user_data_db.String(128), nullable=False)
     banned = user_data_db.Column(user_data_db.Boolean, default=False)  # New field for banning status
 
-
     def set_password(self, password):
         self.hashed_password = generate_password_hash(password)
 
@@ -254,12 +253,14 @@ def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
     return bool(repeating_pattern.search(message))
 
+
 @app.before_request
 def check_banned():
     if current_user.is_authenticated and current_user.banned:
         logout_user()
         # Optionally, you can redirect the user to a page indicating that they have been logged out due to being banned
         return render_template('banned.html')
+
 
 def delete_oldest_parent_post():
     while len(message_board) > MAX_PARENT_POSTS:
@@ -416,7 +417,10 @@ def admin_dashboard():
 
     # Fetch users for display
     users = User.query.all()
-    return render_template('admin_dashboard.html', username=current_user.username, form=form, users=users, message_board=message_board)
+    return render_template('admin_dashboard.html', username=current_user.username, form=form, users=users,
+                           message_board=message_board)
+
+
 # Logout route
 @app.route('/logout')
 @login_required
@@ -438,6 +442,7 @@ def ip_restrictions():
     # Call the function to get the restricted IPs
     restricted_ips_list = get_restricted_ips()
     return render_template('ip_restrictions.html', ip_restrictions=restricted_ips_list)
+
 
 @app.route('/ban_user', methods=['POST'])
 @login_required
@@ -461,6 +466,7 @@ def ban_user():
             flash('User not found.', 'error')
 
         return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/add_ip_restriction', methods=['POST'])
 @login_required
