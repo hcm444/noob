@@ -14,7 +14,6 @@ from flask_login import LoginManager, login_user, logout_user
 
 from io import BytesIO
 import json
-
 from captcha import generate_captcha_image
 
 from flask_wtf.csrf import CSRFProtect, CSRFError
