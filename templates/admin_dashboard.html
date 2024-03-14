@@ -76,26 +76,32 @@
     </style>
 </head>
 <body>
-    <h1>{{ username }}</h1>
+    <h1>{{ username }} </h1><a href="{{ url_for('logout') }}"> Logout </a>
+
     <form method="POST" action="/replace_characters">
         {{ form.csrf_token }}
         <input type="text" name="post_number" id="post_number" placeholder="Delete a post" required>
-        <button class="toggle-replies-button" type="Submit"> D </button>
-        <a href="{{ url_for('logout') }}"> L </a>
+        <button class="toggle-replies-button" type="Submit"> Delete </button>
+    </form>
+
+    <form method="POST" action="{{ url_for('ban_user') }}">
+        {{ form.csrf_token }}
+        <input type="text" name="username" id="username" placeholder="Ban user" required>
+         <button class="toggle-replies-button" type="submit"> Ban </button>
     </form>
 
     <input type="text" id="searchInput" placeholder="Search for a word">
-    <button onclick="searchAndHighlight()" class="toggle-replies-button" type="submit"> S </button>
+    <button onclick="searchAndHighlight()" class="toggle-replies-button" type="submit"> Search </button>
 <form method="POST" action="{{ url_for('add_ip_restriction') }}">
     {{ form.csrf_token }}
     <input type="text" name="ip_to_restrict" placeholder="Add IP to ban list" required>
-    <button class="toggle-replies-button" type="submit"> + </button>
+    <button class="toggle-replies-button" type="submit"> Add IP </button>
 </form>
 
 <form method="POST" action="{{ url_for('remove_ip_restriction') }}">
     {{ form.csrf_token }}
     <input type="text" name="ip_to_remove" placeholder="Remove IP from ban list" required>
-    <button class="toggle-replies-button" type="submit"> - </button>
+    <button class="toggle-replies-button" type="submit"> Remove IP </button>
 </form>
 
 <div class="scrollable-list">

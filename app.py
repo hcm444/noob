@@ -9,7 +9,7 @@ from flask_caching import Cache
 from PIL import Image, ImageDraw, ImageFont
 import threading
 import time
-from flask import jsonify, session
+from flask import jsonify, session, flash
 from flask_login import LoginManager, login_user, logout_user
 
 from io import BytesIO
@@ -130,6 +130,7 @@ class User(user_data_db.Model, UserMixin):
     username = user_data_db.Column(user_data_db.String(20), unique=True, nullable=False)
     hashed_password = user_data_db.Column(user_data_db.String(128), nullable=False)
     email = user_data_db.Column(user_data_db.String(128), nullable=False)
+    banned = user_data_db.Column(user_data_db.Boolean, default=False)  # New field for banning status
 
 
     def set_password(self, password):
@@ -253,6 +254,12 @@ def has_too_many_repeating_characters(message):
     repeating_pattern = re.compile(r'(.)\1{%d,}' % (MAX_REPEATING_CHARACTERS - 1))
     return bool(repeating_pattern.search(message))
 
+@app.before_request
+def check_banned():
+    if current_user.is_authenticated and current_user.banned:
+        logout_user()
+        # Optionally, you can redirect the user to a page indicating that they have been logged out due to being banned
+        return render_template('banned.html')
 
 def delete_oldest_parent_post():
     while len(message_board) > MAX_PARENT_POSTS:
@@ -351,29 +358,65 @@ def login():
 
         # Replace this with your actual authentication logic
         user = User.query.filter_by(username=username).first()
-        if user and user.check_password(password):
-            login_user(user)
-            return redirect(url_for('home'))
-
-        session['error_message'] = 'Invalid username or password'
-        return redirect(url_for('login'))
+        if user:
+            if user.check_password(password):
+                if user.banned:
+                    session['error_message'] = 'Your account has been banned. You are not allowed to login.'
+                    return redirect(url_for('login'))
+                else:
+                    login_user(user)
+                    return redirect(url_for('home'))
+            else:
+                session['error_message'] = 'Invalid username or password'
+                return redirect(url_for('login'))
+        else:
+            session['error_message'] = 'Invalid username or password'
+            return redirect(url_for('login'))
 
     return render_template('login.html', form=form)
 
 
 # Admin dashboard route
 
-@app.route('/admin_dashboard')
+@app.route('/admin_dashboard', methods=['GET', 'POST'])
 @login_required
 def admin_dashboard():
     if current_user.username != 'admin':
+        flash('You are not authorized to access this page.', 'error')
         return redirect(url_for('admin_login'))
 
-    form = MyLoginForm()  # Instantiate the form
-    return render_template('admin_dashboard.html', username=current_user.username, form=form,
-                           message_board=message_board)
+    form = MyLoginForm()
 
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        action = request.form.get('action')
 
+        if action == 'ban':
+            user = User.query.get(user_id)
+            if user:
+                user.banned = True
+                user_data_db.session.commit()
+                flash(f'User {user.username} has been banned.', 'success')
+            else:
+                flash('User not found.', 'error')
+
+        elif action == 'unban':
+            user = User.query.get(user_id)
+            if user:
+                user.banned = False
+                user_data_db.session.commit()
+                flash(f'User {user.username} has been unbanned.', 'success')
+            else:
+                flash('User not found.', 'error')
+
+        else:
+            flash('Invalid action.', 'error')
+
+        return redirect(url_for('admin_dashboard'))
+
+    # Fetch users for display
+    users = User.query.all()
+    return render_template('admin_dashboard.html', username=current_user.username, form=form, users=users, message_board=message_board)
 # Logout route
 @app.route('/logout')
 @login_required
@@ -396,6 +439,28 @@ def ip_restrictions():
     restricted_ips_list = get_restricted_ips()
     return render_template('ip_restrictions.html', ip_restrictions=restricted_ips_list)
 
+@app.route('/ban_user', methods=['POST'])
+@login_required
+def ban_user():
+    if current_user.username != 'admin':
+        return redirect(url_for('admin_login'))
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+
+        # Query the database to find the user with the provided username
+        user_to_ban = User.query.filter_by(username=username).first()
+
+        if user_to_ban:
+            # Set the 'banned' attribute of the user to True
+            user_to_ban.banned = True
+            user_data_db.session.commit()
+
+            flash(f'User {username} has been banned.', 'success')
+        else:
+            flash('User not found.', 'error')
+
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/add_ip_restriction', methods=['POST'])
 @login_required

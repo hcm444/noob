@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
+    <title>BANNED</title>
+    <style>
+        body {
+            background-color: red; /* Changed background color to red */
+            color: white; /* Changed text color to white */
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 100px; /* Increased font size for the giant "BANNED" text */
+            text-align: center;
+        }
+
+        .toggle-replies-button:hover {
+            text-decoration: underline;
+        }
+
+        .toggle-replies-button {
+            display: inline-block;
+            background-color: #000;
+            color: #00FF00;
+            padding: 5px 10px;
+            margin-right: 5px;
+            text-decoration: none;
+            border: none;
+        }
+
+        .cube-container {
+            width: 100px;
+            height: 100px;
+            perspective: 600px;
+            perspective-origin: 50% 50%;
+        }
+
+        .cube {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            transform-style: preserve-3d;
+            animation: rotateCubeFace 5s infinite linear;
+        }
+
+        .front, .back {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            background-color: rgba(0, 255, 0, 0.5);
+            opacity: 0.8;
+            transform-style: preserve-3d;
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-gap: 1px;
+        }
+
+        .back {
+            transform: rotateY(180deg);
+        }
+
+        .alive {
+            width: 100%;
+            height: 100%;
+            background-color: #00FF00;
+        }
+
+        .dead {
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+        }
+
+        @keyframes rotateCubeFace {
+            from {
+                transform: rotateY(0deg);
+            }
+            to {
+                transform: rotateY(360deg);
+            }
+        }
+
+        #developerLog {
+            margin-top: 30px;
+            border-top: 2px solid #00FF00;
+            padding-top: 20px;
+        }
+
+        .logPost {
+            margin-bottom: 20px;
+            padding: 10px;
+            background-color: rgba(0, 255, 0, 0.2);
+            border: 1px solid #00FF00;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+<h1>BANNED</h1> <!-- Changed text to "BANNED" and increased its size -->
+</body>
+</html>
