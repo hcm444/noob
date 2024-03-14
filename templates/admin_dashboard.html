@@ -90,6 +90,13 @@
          <button class="toggle-replies-button" type="submit"> Ban </button>
     </form>
 
+    <form method="POST" action="{{ url_for('unban_user') }}">
+    {{ form.csrf_token }}
+    <input type="text" name="username2" id="username2" placeholder="Unban user" required>
+    <button class="toggle-replies-button" type="submit"> Unban </button>
+</form>
+
+
     <input type="text" id="searchInput" placeholder="Search for a word">
     <button onclick="searchAndHighlight()" class="toggle-replies-button" type="submit"> Search </button>
 <form method="POST" action="{{ url_for('add_ip_restriction') }}">

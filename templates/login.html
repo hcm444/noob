@@ -22,12 +22,16 @@
             background-color: #00FF00; /* #00FF00 button color */
             color: #000; /* Black text */
         }
-    .cube {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 50vh; /* Optionally, to center vertically within the viewport */
-    }
+   .cube {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50vh; /* Optionally, to center vertically within the viewport */
+    position: absolute; /* Position the cube absolutely */
+    bottom: 50px; /* Adjust this value as needed to fine-tune the position */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+}
 
         body {
             background-color: #000;
@@ -97,10 +101,12 @@
             {% endif %}
             <p>Don't have an account? <a href="{{ url_for('register') }}">Register</a></p>
         </main>
+
     </div>
-   <div class="cube">
+           <div class="cube">
     {% include "cube.html" %}
 </div>
+
 </body>
 
 </html>

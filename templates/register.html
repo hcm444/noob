@@ -8,12 +8,30 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
     <title>{% block title %}My Website{% endblock %}</title>
     <style>
-            .cube {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 50vh; /* Optionally, to center vertically within the viewport */
-    }
+         a {
+            color: #00FF00; /* #00FF00 link color */
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Change button colors */
+        .button.is-primary {
+            background-color: #00FF00; /* #00FF00 button color */
+            color: #000; /* Black text */
+        }
+.cube {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 50vh; /* Optionally, to center vertically within the viewport */
+    position: absolute; /* Position the cube absolutely */
+    bottom: 50px; /* Adjust this value as needed to fine-tune the position */
+    left: 50%; /* Center horizontally */
+    transform: translateX(-50%); /* Center horizontally */
+}
         body {
             background-color: #000;
             color: #00FF00; /* #00FF00 text */
@@ -97,9 +115,11 @@
             </form>
             <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
         </main>
+
     </div>
-   <div class="cube">
+           <div class="cube">
     {% include "cube.html" %}
 </div>
+
 </body>
 </html>

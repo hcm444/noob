@@ -468,6 +468,28 @@ def ban_user():
 
         return redirect(url_for('admin_dashboard'))
 
+@app.route('/unban_user', methods=['POST'])
+@login_required
+def unban_user():
+    if current_user.username != 'admin':
+        return redirect(url_for('admin_login'))
+
+    if request.method == 'POST':
+        username = request.form.get('username2')
+
+        # Query the database to find the user with the provided username
+        user_to_unban = User.query.filter_by(username=username).first()
+
+        if user_to_unban:
+            # Set the 'banned' attribute of the user to True
+            user_to_unban.banned = False
+            user_data_db.session.commit()
+
+            flash(f'User {username} has been un-banned.', 'success')
+        else:
+            flash('User not found.', 'error')
+
+        return redirect(url_for('admin_dashboard'))
 
 @app.route('/add_ip_restriction', methods=['POST'])
 @login_required
