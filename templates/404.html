@@ -1,221 +1,87 @@
+<!-- templates/login.html -->
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
-    <title>Noob</title>
+    <title>{% block title %}Noob{% endblock %}</title>
     <style>
-        .toggle-replies-button:hover {
-            text-decoration: underline;
-        }
+  .toggle-replies-button {
+    display: inline-block;
+    background-color: #000; /* #00FF00 button color */
+    color: #00FF00; /* Black text */
+    padding: 5px 10px; /* Adjust padding as needed */
+    margin-right: 5px; /* Adjust margin as needed */
+    text-decoration: none;
+    border:none;
+}
+    .cube {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 50vh; /* Optionally, to center vertically within the viewport */
+    }
 
-        .toggle-replies-button {
-            display: inline-block;
-            background-color: #000;
-            color: #00FF00;
-            padding: 5px 10px;
-            margin-right: 5px;
-            text-decoration: none;
-            border: none;
-        }
         body {
             background-color: #000;
-            color: #00FF00;
+            color: #00FF00; /* #00FF00 text */
             font-family: Arial, sans-serif;
             margin: 20px;
         }
 
-        .cube-container {
-            width: 100px;
-            height: 100px;
-            perspective: 600px;
-            perspective-origin: 50% 50%;
+        label {
+            color: #00FF00; /* #00FF00 label text color */
         }
 
-        .cube {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            transform-style: preserve-3d;
-            animation: rotateCubeFace 5s infinite linear;
+        input {
+            background-color: #000; /* Dark input background */
+            color: #00FF00; /* #00FF00 input text color */
+            border: 1px solid #00FF00; /* #00FF00 border */
+            padding: 5px;
+            margin-bottom: 10px;
         }
 
-        .front, .back {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            background-color: rgba(0, 255, 0, 0.5);
-            opacity: 0.8;
-            transform-style: preserve-3d;
-            display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-gap: 1px;
+        button {
+            background-color: #000; /* Dark button background */
+            color: #00FF00; /* #00FF00 button text color */
+            border: 1px solid #00FF00; /* #00FF00 border */
+            padding: 8px;
+            cursor: pointer;
         }
 
-        .back {
-            transform: rotateY(180deg);
+        button:hover {
+            background-color: #00FF00; /* #00FF00 button background on hover */
+            color: #000; /* Black button text color on hover */
         }
 
-        .alive {
-            width: 100%;
-            height: 100%;
-            background-color: #00FF00;
+        p.error-message {
+            color: red; /* Red error message text color */
         }
 
-        .dead {
-            width: 100%;
-            height: 100%;
-            background-color: #000;
+        .container {
+            text-align: center;
+            margin-top: 50px;
         }
 
-        @keyframes rotateCubeFace {
-            from {
-                transform: rotateY(0deg);
-            }
-            to {
-                transform: rotateY(360deg);
-            }
-        }
-                /* ... existing styles ... */
-        #developerLog {
-            margin-top: 30px;
-            border-top: 2px solid #00FF00;
-            padding-top: 20px;
-        }
-
-        .logPost {
-            margin-bottom: 20px;
-            padding: 10px;
-            background-color: rgba(0, 255, 0, 0.2);
-            border: 1px solid #00FF00;
-            border-radius: 5px;
+        form {
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-<div class="cube-container">
-    <div class="cube">
-        <div class="front" id="frontGrid"></div>
-        <div class="back" id="backGrid"></div>
+    <div class="container">
+        <main>
+            <h2>noob.lat</h2>
+            <h2>404</h2>
+                <a class="toggle-replies-button" href="{{ url_for('home')}}"> Index </a>
+        </main>
     </div>
-
+   <div class="cube">
+    {% include "cube.html" %}
 </div>
-<h2>noob.lat - 404</h2>
 
-<script>
-    function countLiveNeighbors(grid, row, col) {
-        const numRows = grid.length;
-        const numCols = grid[0].length;
-        let count = 0;
-
-        for (let i = -1; i <= 1; i++) {
-            for (let j = -1; j <= 1; j++) {
-                const neighborRow = row + i;
-                const neighborCol = col + j;
-
-                if (i === 0 && j === 0) {
-                    continue;
-                }
-
-                if (neighborRow >= 0 && neighborRow < numRows &&
-                    neighborCol >= 0 && neighborCol < numCols &&
-                    grid[neighborRow][neighborCol] === 1) {
-                    count++;
-                }
-            }
-        }
-
-        return count;
-    }
-
-    function updateGrid(grid) {
-        const numRows = grid.length;
-        const numCols = grid[0].length;
-        const newGrid = [];
-
-        for (let i = 0; i < numRows; i++) {
-            newGrid.push([...grid[i]]);
-        }
-
-        for (let i = 0; i < numRows; i++) {
-            for (let j = 0; j < numCols; j++) {
-                const liveNeighbors = countLiveNeighbors(grid, i, j);
-
-                if (grid[i][j] === 1) {
-                    if (liveNeighbors < 2 || liveNeighbors > 3) {
-                        newGrid[i][j] = 0;
-                    }
-                } else {
-                    if (liveNeighbors === 3) {
-                        newGrid[i][j] = 1;
-                    }
-                }
-            }
-        }
-
-        for (let i = 0; i < numRows; i++) {
-            for (let j = 0; j < numCols; j++) {
-                grid[i][j] = newGrid[i][j];
-            }
-        }
-    }
-
-    function addRandomLiveCells(grid, numCells) {
-        const numRows = grid.length;
-        const numCols = grid[0].length;
-
-        for (let i = 0; i < numCells; i++) {
-            const randomRow = Math.floor(Math.random() * numRows);
-            const randomCol = Math.floor(Math.random() * numCols);
-
-            grid[randomRow][randomCol] = 1;
-        }
-    }
-
-    function createRandomGrid() {
-        const grid = [];
-        for (let i = 0; i < 10; i++) {
-            const row = [];
-            for (let j = 0; j < 10; j++) {
-                row.push(Math.random() > 0.7 ? 1 : 0);
-            }
-            grid.push(row);
-        }
-        return grid;
-    }
-
-    function renderGrid(grid, containerId) {
-        const container = document.getElementById(containerId);
-        container.innerHTML = '';
-        for (const row of grid) {
-            for (const cell of row) {
-                const cellElement = document.createElement('div');
-                cellElement.className = cell ? 'alive' : 'dead';
-                container.appendChild(cellElement);
-            }
-        }
-    }
-
-    const frontGrid = createRandomGrid();
-    const backGrid = createRandomGrid();
-
-    renderGrid(frontGrid, 'frontGrid');
-    renderGrid(backGrid, 'backGrid');
-
-    function updateAndRenderGrids() {
-        updateGrid(frontGrid);
-        updateGrid(backGrid);
-        addRandomLiveCells(frontGrid, 3); // Adjust the number of random live cells as needed
-        addRandomLiveCells(backGrid, 3);  // Adjust the number of random live cells as needed
-        renderGrid(frontGrid, 'frontGrid');
-        renderGrid(backGrid, 'backGrid');
-        requestAnimationFrame(updateAndRenderGrids);
-    }
-
-    updateAndRenderGrids();
-</script>
 </body>
 
-<a class="toggle-replies-button" href="{{ url_for('home')}}"> I </a>
-<a class="toggle-replies-button" href="{{ url_for('snake')}}"> S </a>
 </html>

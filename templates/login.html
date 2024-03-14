@@ -8,7 +8,20 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
     <title>{% block title %}Noob{% endblock %}</title>
     <style>
+ a {
+            color: #00FF00; /* #00FF00 link color */
+            text-decoration: none;
+        }
 
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Change button colors */
+        .button.is-primary {
+            background-color: #00FF00; /* #00FF00 button color */
+            color: #000; /* Black text */
+        }
     .cube {
         display: flex;
         justify-content: center;
