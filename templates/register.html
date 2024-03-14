@@ -8,6 +8,12 @@
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
     <title>{% block title %}My Website{% endblock %}</title>
     <style>
+            .cube {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 50vh; /* Optionally, to center vertically within the viewport */
+    }
         body {
             background-color: #000;
             color: #00FF00; /* #00FF00 text */
@@ -63,6 +69,7 @@
 <body>
     <div class="container">
         <main>
+            <h2>noob.lat</h2>
             <h2>Register</h2>
             <form method="post" action="{{ url_for('register') }}">
                 {{ form.hidden_tag() }}
@@ -91,5 +98,8 @@
             <p>Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
         </main>
     </div>
+   <div class="cube">
+    {% include "cube.html" %}
+</div>
 </body>
 </html>

@@ -123,6 +123,8 @@ def map():
     return render_template('map.html')
 
 
+
+
 class User(user_data_db.Model, UserMixin):
     __tablename__ = 'user'
     id = user_data_db.Column(user_data_db.Integer, primary_key=True)

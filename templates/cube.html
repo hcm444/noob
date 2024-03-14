@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Game of Life Cube</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: black;
+    }
+
+    #cube-container {
+  position: relative; /* Change from absolute to relative positioning */
+  margin: 0 auto; /* Center the cube horizontally */
+}
+
+body {
+  margin: 0;
+  background-color: black;
+}
+
+    #cube {
+      width: 200px;
+      height: 200px;
+      transform-style: preserve-3d;
+      animation: spin 5s linear infinite;
+    }
+
+    .face {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      box-sizing: border-box;
+      display: grid;
+      grid-template-rows: repeat(10, 1fr);
+      grid-template-columns: repeat(10, 1fr);
+    }
+
+    .face::before {
+      content: '';
+      border: 1px solid green;
+      box-sizing: border-box;
+      grid-row: span 10;
+      grid-column: span 10;
+    }
+
+    .cell {
+      width: 20px;
+      height: 20px;
+      background-color: transparent;
+      border: 1px solid green;
+      box-sizing: border-box;
+    }
+
+    .alive {
+      background-color: green;
+    }
+
+    .face:nth-child(1) { transform: rotateY(0deg) translateZ(100px); }
+    .face:nth-child(2) { transform: rotateY(90deg) translateZ(100px); }
+    .face:nth-child(3) { transform: rotateY(180deg) translateZ(100px); }
+    .face:nth-child(4) { transform: rotateY(-90deg) translateZ(100px); }
+    .face:nth-child(5) { transform: rotateX(90deg) translateZ(100px); }
+    .face:nth-child(6) { transform: rotateX(-90deg) translateZ(100px); }
+
+    @keyframes spin {
+      0% { transform: rotateX(0) rotateY(0) rotateZ(0); }
+      100% { transform: rotateX(360deg) rotateY(360deg) rotateZ(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div id="cube-container">
+    <div id="cube">
+        <div class="face" id="face1"></div>
+        <div class="face" id="face2"></div>
+        <div class="face" id="face3"></div>
+        <div class="face" id="face4"></div>
+        <div class="face" id="face5"></div>
+        <div class="face" id="face6"></div>
+    </div>
+</div>
+
+<script>
+  const faces = document.querySelectorAll('.face');
+
+  // Function to update the state of cells based on Game of Life rules
+  function updateCells(cells) {
+    const newCells = [];
+    const numRows = Math.sqrt(cells.length);
+
+    for (let i = 0; i < cells.length; i++) {
+      const row = Math.floor(i / numRows);
+      const col = i % numRows;
+
+      const neighbors = [
+        cells[(row - 1) * numRows + (col - 1)], cells[(row - 1) * numRows + col], cells[(row - 1) * numRows + (col + 1)],
+        cells[row * numRows + (col - 1)], cells[row * numRows + (col + 1)],
+        cells[(row + 1) * numRows + (col - 1)], cells[(row + 1) * numRows + col], cells[(row + 1) * numRows + (col + 1)],
+      ].filter((neighbor) => neighbor !== undefined);
+
+      const aliveNeighbors = neighbors.filter((neighbor) => neighbor === 1).length;
+
+      if (cells[i] === 1) {
+        // Apply Game of Life rules for live cells
+        newCells[i] = aliveNeighbors === 2 || aliveNeighbors === 3 ? 1 : 0;
+      } else {
+        // Apply Game of Life rules for dead cells
+        newCells[i] = aliveNeighbors === 3 ? 1 : 0;
+      }
+    }
+    return newCells;
+  }
+
+  // Function to initialize cells randomly
+  function initializeCells(numCells, probability) {
+    return Array.from({ length: numCells }, () => Math.random() < probability ? 1 : 0);
+  }
+
+  // Function to display cells on the face
+  function displayCells(face, cells) {
+    face.innerHTML = cells.map((cell) => `<div class="cell ${cell ? 'alive' : ''}"></div>`).join('');
+  }
+
+  // Function to randomly toggle cell states
+  function addRandomCells(cells, probability) {
+    return cells.map((cell) => (Math.random() < probability ? 1 - cell : cell));
+  }
+
+  // Loop through each face of the cube
+  faces.forEach((face, index) => {
+    const numCells = 100; // Assuming 10x10 grid
+    let cells = initializeCells(numCells, 0.1); // Adjust the probability as needed
+
+    // Display initial state of cells on the face
+    displayCells(face, cells);
+
+    // Update cells periodically
+    setInterval(() => {
+      cells = updateCells(cells);
+      cells = addRandomCells(cells, 0.05); // Adjust the probability as needed
+      displayCells(face, cells);
+    }, 100); // Adjust the interval as needed
+  });
+</script>
+
+
+
+</body>
+</html>
