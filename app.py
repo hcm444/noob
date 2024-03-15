@@ -473,7 +473,6 @@ def ban_user():
 def unban_user():
     if current_user.username != 'admin':
         return redirect(url_for('admin_login'))
-
     if request.method == 'POST':
         username = request.form.get('username2')
 
