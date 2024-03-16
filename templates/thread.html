@@ -2,7 +2,7 @@
 <html>
 <head>
     <link rel="icon" type="image/png" href="{{ url_for('static', filename='message_board_image.png') }}">
-    <title>Noob</title>
+    <title>{% block title %}Noob{% endblock %}</title>
     <style>
         body {
             background-color: #000;
