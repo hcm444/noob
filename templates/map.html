@@ -1,22 +1,23 @@
 <!DOCTYPE html>
 <html>
+<title>{% block title %}Noob{% endblock %}</title>
 <head>
-    <title>{% block title %}Noob{% endblock %}</title>
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css"
         integrity="sha512-xwE/Az9zrjBIphAcBb3F6JVqxf46+CDLwfLMHloNu6KEQCAWi6HcDUbeOfBIptF7tcCzusKFjFw2yuvEpDL9wQ=="
         crossorigin="" />
     <style type="text/css">
-        html { height: 100% }
-        body { height: 100%; margin: 0; padding: 0; color: #00FF00; background-color: black; }
-        .plane-icon { padding:0px; margin:0px; }
-        #map_canvas { height: 100% }
-        #info { position: absolute; width:20%; height:100%; bottom:0px; right:0px; top:0px; background-color: black; border-left:1px #666 solid; font-family:Helvetica; }
-        #info div { padding:0px; padding-left:10px; margin:0px; }
-        #info div h1 { margin-top:10px; font-size:16px; color: #00FF00; }
-        #info div p { font-size:14px; color:#00FF00; }
-        .planeTableContainer { height: 80%; overflow-y: auto; }
-    </style>
+    html { height: 100% }
+    body { height: 100%; margin: 0; padding: 0; color: #00FF00; background-color: black; }
+    .plane-icon { padding:0px; margin:0px; }
+    #map_canvas { height: 100% }
+    #info { position: absolute; width:20%; height:100%; bottom:0px; right:0px; top:0px; background-color: black; border-left:1px #666 solid; font-family:Helvetica; }
+    #info div { padding:0px; padding-left:10px; margin:0px; }
+    #info div h1 { margin-top:10px; font-size:16px; color: #00FF00; }
+    #info div p { font-size:14px; color:#00FF00; }
+    .planeTableContainer { height: 80%; overflow-y: auto; }
+</style>
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
         integrity="sha512-gZwIG9x3wUXg2hdXF6+rVkLF/0Vi9U8D2Ntg4Ga5I5BZpVkVxlJWbSQtXPSiUTtC0TjtGOmxa1AJPuV0CPthew=="
@@ -26,8 +27,6 @@
         var Planes = {};
         var NumPlanes = 0;
         var Selected = null;
-        var offset = 0;
-        var limit = 100; // Number of data points to fetch per request
 
         function getIconForPlane(plane) {
             var triangleSize = 20;
@@ -109,116 +108,77 @@
             }
         }
 
-        function fetchData(offset, limit) {
-            $.getJSON('/api2?offset=' + offset + '&limit=' + limit, function (data) {
-                // Process fetched data
-                processAircraftData(data);
+        function fetchData() {
+    $.getJSON('/api2', function (data) {
+        var stillhere = {};
 
-                // Update pagination variables for the next request
-                offset += limit;
-            });
-        }
+        for (var j = 0; j < data.length; j++) {
+            var plane = data[j];
+            var marker = null;
+            stillhere[plane.icao24] = true;
 
-        function fetchDataIfNeeded() {
-            var bounds = Map.getBounds();
-            var ne = bounds.getNorthEast();
-            var sw = bounds.getSouthWest();
+            var icao24 = plane.icao24 || "no icao24"; // Handle "no icao24"
+            var callsign = plane.callsign || "no callsign"; // Handle "no callsign"
+            var altitude = plane.altitude;
+            var speed = plane.speed;
+            var latitude = plane.latitude;
+            var longitude = plane.longitude;
+            var heading = plane.heading;
 
-            // Check if fetching is needed based on current map bounds
-            if (shouldFetchData(ne, sw)) {
-                fetchData(offset, limit);
+            // Check if plane with the same icao24 already exists
+            if (Planes[icao24]) {
+                // Update existing plane data
+                var existingPlane = Planes[icao24];
+                existingPlane.altitude = altitude;
+                existingPlane.speed = speed;
+                existingPlane.latitude = latitude;
+                existingPlane.longitude = longitude;
+                existingPlane.heading = heading;
+                existingPlane.callsign = callsign;
+
+                // Update marker position and icon
+                existingPlane.marker.setLatLng([latitude, longitude]);
+                existingPlane.marker.setIcon(getIconForPlane(existingPlane));
+            } else {
+                // Create marker for the plane
+                var icon = getIconForPlane({
+                    icao24: icao24,
+                    altitude: altitude,
+                    speed: speed,
+                    latitude: latitude,
+                    longitude: longitude,
+                    heading: heading,
+                    callsign: callsign
+                });
+                marker = L.marker([latitude, longitude], { icon: icon }).addTo(Map);
+                marker.on('click', selectPlaneCallback(icao24));
+
+                Planes[icao24] = {
+                    icao24: icao24,
+                    altitude: altitude,
+                    speed: speed,
+                    latitude: latitude,
+                    longitude: longitude,
+                    heading: heading,
+                    callsign: callsign,
+                    marker: marker
+                };
             }
         }
 
-        function shouldFetchData(ne, sw) {
-    // Calculate the distance between the northeast and southwest corners of the map
-    var distance1 = ne.distanceTo(sw);
+        NumPlanes = Object.keys(stillhere).length;
+        refreshGeneralInfo();
 
-    // Calculate the distance between the northeast and southeast corners of the map
-    var se = new L.LatLng(sw.lat, ne.lng);
-    var distance2 = ne.distanceTo(se);
-
-    // Calculate the distance between the southwest and southeast corners of the map
-    var distance3 = sw.distanceTo(se);
-
-    // Determine a threshold distance at which new data should be fetched
-    // You may adjust this threshold based on your specific requirements
-    var threshold = 10000; // Example threshold in meters
-
-    // Compare each distance to the threshold
-    // If any distance exceeds the threshold, return true to indicate that data should be fetched
-    return distance1 > threshold || distance2 > threshold || distance3 > threshold;
+        // Remove markers for planes not present in the latest data
+        for (var p in Planes) {
+            if (!stillhere[p]) {
+                Map.removeLayer(Planes[p].marker);
+                delete Planes[p];
+            }
+        }
+    });
 }
 
-
-        function processAircraftData(data) {
-            var stillhere = {};
-
-            for (var j = 0; j < data.length; j++) {
-                var plane = data[j];
-                var marker = null;
-                stillhere[plane.icao24] = true;
-
-                var icao24 = plane.icao24 || "no icao24"; // Handle "no icao24"
-                var callsign = plane.callsign || "no callsign"; // Handle "no callsign"
-                var altitude = plane.altitude;
-                var speed = plane.speed;
-                var latitude = plane.latitude;
-                var longitude = plane.longitude;
-                var heading = plane.heading;
-
-                // Check if plane with the same icao24 already exists
-                if (Planes[icao24]) {
-                    // Update existing plane data
-                    var existingPlane = Planes[icao24];
-                    existingPlane.altitude = altitude;
-                    existingPlane.speed = speed;
-                    existingPlane.latitude = latitude;
-                    existingPlane.longitude = longitude;
-                    existingPlane.heading = heading;
-                    existingPlane.callsign = callsign;
-
-                    // Update marker position and icon
-                    existingPlane.marker.setLatLng([latitude, longitude]);
-                    existingPlane.marker.setIcon(getIconForPlane(existingPlane));
-                } else {
-                    // Create marker for the plane
-                    var icon = getIconForPlane({
-                        icao24: icao24,
-                        altitude: altitude,
-                        speed: speed,
-                        latitude: latitude,
-                        longitude: longitude,
-                        heading: heading,
-                        callsign: callsign
-                    });
-                    marker = L.marker([latitude, longitude], { icon: icon }).addTo(Map);
-                    marker.on('click', selectPlaneCallback(icao24));
-
-                    Planes[icao24] = {
-                        icao24: icao24,
-                        altitude: altitude,
-                        speed: speed,
-                        latitude: latitude,
-                        longitude: longitude,
-                        heading: heading,
-                        callsign: callsign,
-                        marker: marker
-                    };
-                }
-            }
-
-            NumPlanes = Object.keys(stillhere).length;
-            refreshGeneralInfo();
-
-            // Remove markers for planes not present in the latest data
-            for (var p in Planes) {
-                if (!stillhere[p]) {
-                    Map.removeLayer(Planes[p].marker);
-                    delete Planes[p];
-                }
-            }
-        }
 
         function refreshGeneralInfo() {
             var i = document.getElementById('geninfo');
@@ -235,15 +195,14 @@
                 id: 'mapbox/streets-v11',
                 accessToken: 'your.mapbox.access.token'
             }).addTo(Map);
-
-            Map.on('moveend', function () {
-                fetchDataIfNeeded();
-            });
-
-            fetchDataIfNeeded();
+            window.setInterval(function () {
+                fetchData();
+                refreshGeneralInfo();
+            }, 100);
         }
     </script>
 </head>
+
 <body onload="initialize()">
     <div id="map_canvas" style="width:80%; height:100%; float: left;"></div>
     <div id="info" style="width: 20%; float: right;">
