@@ -615,7 +615,6 @@ def post():
     global post_counts, post_counter, ip_post_counts
     message = request.form.get('message')
     ip_address = request.headers.get('X-Forwarded-For', '').split(',')[0].strip() or request.remote_addr
-    tripcode = generate_tripcode(ip_address)
     user_captcha = request.form.get('captcha', '')
     stored_captcha = session.get('captcha', '')
 
