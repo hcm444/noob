@@ -11,11 +11,15 @@
         body { height: 100%; margin: 0; padding: 0; color: #00FF00; background-color: black; }
         .plane-icon { padding:0px; margin:0px; }
         #map_canvas { height: 100% }
-        #info { position: absolute; width:20%; height:100%; bottom:0px; right:0px; top:0px; background-color: black; border-left:1px #666 solid; font-family:Helvetica; }
+        #info { position: absolute; width:20%; height:100%; bottom:0px; right:0px; top:0px; background-color: black; border-left:1px #666 solid; font-size:11px; font-family:Helvetica; }
         #info div { padding:0px; padding-left:10px; margin:0px; }
-        #info div h1 { margin-top:10px; font-size:16px; color: #00FF00; }
+        #info div h1 { margin-top:10px; font-size:10px; color: #00FF00; }
         #info div p { font-size:14px; color:#00FF00; }
-        .planeTableContainer { height: 80%; overflow-y: auto; }
+        .planeTableContainer {
+    height: 800px; /* Set a fixed height for the container */
+    overflow-y: auto; /* Enable vertical scrolling */
+    overflow-x: hidden; /* Hide horizontal scrollbar */
+}
     </style>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"
@@ -152,78 +156,73 @@
 
 
         function processAircraftData(data) {
-    var stillhere = {};
+            var stillhere = {};
 
-    var mapBounds = Map.getBounds();
+            for (var j = 0; j < data.length; j++) {
+                var plane = data[j];
+                var marker = null;
+                stillhere[plane.icao24] = true;
 
-    for (var j = 0; j < data.length; j++) {
-        var plane = data[j];
-        var marker = null;
-        stillhere[plane.icao24] = true;
+                var icao24 = plane.icao24 || "no icao24"; // Handle "no icao24"
+                var callsign = plane.callsign || "no callsign"; // Handle "no callsign"
+                var altitude = plane.altitude;
+                var speed = plane.speed;
+                var latitude = plane.latitude;
+                var longitude = plane.longitude;
+                var heading = plane.heading;
 
-        var icao24 = plane.icao24 || "no icao24"; // Handle "no icao24"
-        var callsign = plane.callsign || "no callsign"; // Handle "no callsign"
-        var altitude = plane.altitude;
-        var speed = plane.speed;
-        var latitude = plane.latitude;
-        var longitude = plane.longitude;
-        var heading = plane.heading;
+                // Check if plane with the same icao24 already exists
+                if (Planes[icao24]) {
+                    // Update existing plane data
+                    var existingPlane = Planes[icao24];
+                    existingPlane.altitude = altitude;
+                    existingPlane.speed = speed;
+                    existingPlane.latitude = latitude;
+                    existingPlane.longitude = longitude;
+                    existingPlane.heading = heading;
+                    existingPlane.callsign = callsign;
 
-        // Check if the plane's coordinates are within the map bounds
-        if (mapBounds.contains([latitude, longitude])) {
-            // Check if plane with the same icao24 already exists
-            if (Planes[icao24]) {
-                // Update existing plane data
-                var existingPlane = Planes[icao24];
-                existingPlane.altitude = altitude;
-                existingPlane.speed = speed;
-                existingPlane.latitude = latitude;
-                existingPlane.longitude = longitude;
-                existingPlane.heading = heading;
-                existingPlane.callsign = callsign;
+                    // Update marker position and icon
+                    existingPlane.marker.setLatLng([latitude, longitude]);
+                    existingPlane.marker.setIcon(getIconForPlane(existingPlane));
+                } else {
+                    // Create marker for the plane
+                    var icon = getIconForPlane({
+                        icao24: icao24,
+                        altitude: altitude,
+                        speed: speed,
+                        latitude: latitude,
+                        longitude: longitude,
+                        heading: heading,
+                        callsign: callsign
+                    });
+                    marker = L.marker([latitude, longitude], { icon: icon }).addTo(Map);
+                    marker.on('click', selectPlaneCallback(icao24));
 
-                // Update marker position and icon
-                existingPlane.marker.setLatLng([latitude, longitude]);
-                existingPlane.marker.setIcon(getIconForPlane(existingPlane));
-            } else {
-                // Create marker for the plane
-                var icon = getIconForPlane({
-                    icao24: icao24,
-                    altitude: altitude,
-                    speed: speed,
-                    latitude: latitude,
-                    longitude: longitude,
-                    heading: heading,
-                    callsign: callsign
-                });
-                marker = L.marker([latitude, longitude], { icon: icon }).addTo(Map);
-                marker.on('click', selectPlaneCallback(icao24));
+                    Planes[icao24] = {
+                        icao24: icao24,
+                        altitude: altitude,
+                        speed: speed,
+                        latitude: latitude,
+                        longitude: longitude,
+                        heading: heading,
+                        callsign: callsign,
+                        marker: marker
+                    };
+                }
+            }
 
-                Planes[icao24] = {
-                    icao24: icao24,
-                    altitude: altitude,
-                    speed: speed,
-                    latitude: latitude,
-                    longitude: longitude,
-                    heading: heading,
-                    callsign: callsign,
-                    marker: marker
-                };
+            NumPlanes = Object.keys(stillhere).length;
+            refreshGeneralInfo();
+
+            // Remove markers for planes not present in the latest data
+            for (var p in Planes) {
+                if (!stillhere[p]) {
+                    Map.removeLayer(Planes[p].marker);
+                    delete Planes[p];
+                }
             }
         }
-    }
-
-    NumPlanes = Object.keys(stillhere).length;
-    refreshGeneralInfo();
-
-    // Remove markers for planes not present in the latest data
-    for (var p in Planes) {
-        if (!stillhere[p]) {
-            Map.removeLayer(Planes[p].marker);
-            delete Planes[p];
-        }
-    }
-}
 
         function refreshGeneralInfo() {
             var i = document.getElementById('geninfo');
