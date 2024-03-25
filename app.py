@@ -123,8 +123,6 @@ def map():
     return render_template('map.html')
 
 
-
-
 class User(user_data_db.Model, UserMixin):
     __tablename__ = 'user'
     id = user_data_db.Column(user_data_db.Integer, primary_key=True)
@@ -167,7 +165,7 @@ class MyLoginForm(FlaskForm):
 POPULATE_RANGE = 400
 POP_MIN = 0
 POP_MAX = 100
-POPULATE = 0  # Set to 1 to enable automatic population, 0 to disable
+POPULATE = 1  # Set to 1 to enable automatic population, 0 to disable
 
 OPENSKY_PING = 120
 ENLARGE_FACTOR = 40
@@ -468,6 +466,7 @@ def ban_user():
 
         return redirect(url_for('admin_dashboard'))
 
+
 @app.route('/unban_user', methods=['POST'])
 @login_required
 def unban_user():
@@ -489,6 +488,7 @@ def unban_user():
             flash('User not found.', 'error')
 
         return redirect(url_for('admin_dashboard'))
+
 
 @app.route('/add_ip_restriction', methods=['POST'])
 @login_required
